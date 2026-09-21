@@ -80,7 +80,7 @@ export default function PublicRecord({ record, qrDataUrl }) {
             <div className="packaging-info-row"><span>Ürün Tanımı / Product Description</span><strong>{value(record.product_name)}</strong></div>
             <div className="packaging-info-row"><span>Ambalaj Sınıfı / Packaging Class</span><strong>{packageClassLabel(record.package_class)}</strong></div>
             <div className="packaging-info-row"><span>Ambalaj Tipi / Packaging Type</span><strong>{packageTypeLabel(record.package_type)}</strong></div>
-            <div className="packaging-info-row"><span>Geri Dönüşüm Sınıfı / Recycling Class</span><strong>{pap ? <span className="pap-public"><span className="pap-logo">♻</span><strong>{pap.code}</strong></span> : "—"}</strong></div>
+            <div className="packaging-info-row"><span>Geri Dönüşüm Sınıfı / Recycling Class</span><div className="packaging-info-value">{pap ? <span className="pap-public"><span className="pap-logo">♻</span><strong>{pap.code}</strong></span> : "—"}</div></div>
             <div className="packaging-info-row"><span>Toplam Ağırlık / Total Weight</span><strong>{value(record.total_weight)}</strong></div>
             <div className="packaging-info-row"><span>Üretim Tesisi / Production Facility</span><strong>{value(record.production_facility)}</strong></div>
           </div>
