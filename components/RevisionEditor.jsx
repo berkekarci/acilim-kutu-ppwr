@@ -57,7 +57,6 @@ function calculateEFluteMaterials(areaValue) {
     name: row.name,
     weight: area ? `${(area * row.gsm).toFixed(2)} g` : "Net alan bekleniyor",
     ratio: `%${((row.gsm / EFFECTIVE_GSM) * 100).toFixed(2)}`,
-    evidence: "E Dalga otomatik reçete",
   }));
 }
 
@@ -322,7 +321,7 @@ export default function RevisionEditor({ revision, recordId, action }) {
               <h2>4. Malzeme bileşimi</h2>
               {eFluteSelected && <p className="admin-hint">E Dalga seçildiği için reçete otomatik oluşturuldu. Net alan değiştikçe ağırlıklar senkronize güncellenir.</p>}
             </div>
-            {!eFluteSelected && <button type="button" className="admin-secondary" onClick={() => setMaterials([...materials, { name: "", weight: "", ratio: "", evidence: "" }])}>+ Malzeme</button>}
+            {!eFluteSelected && <button type="button" className="admin-secondary" onClick={() => setMaterials([...materials, { name: "", weight: "", ratio: "" }])}>+ Malzeme</button>}
           </div>
           {visibleMaterials.length === 0 && <p className="admin-hint">Henüz malzeme satırı eklenmedi.</p>}
           {visibleMaterials.map((material, i) => (
@@ -330,7 +329,6 @@ export default function RevisionEditor({ revision, recordId, action }) {
               <input placeholder="Malzeme" value={material.name || ""} readOnly={eFluteSelected} onChange={(e) => updateM(i, "name", e.target.value)} />
               <input placeholder="Ağırlık" value={material.weight || ""} readOnly={eFluteSelected} onChange={(e) => updateM(i, "weight", e.target.value)} />
               <input placeholder="Oran" value={material.ratio || ""} readOnly={eFluteSelected} onChange={(e) => updateM(i, "ratio", e.target.value)} />
-              <input placeholder="Kanıt / kaynak" value={material.evidence || ""} readOnly={eFluteSelected} onChange={(e) => updateM(i, "evidence", e.target.value)} />
               {!eFluteSelected && <button type="button" aria-label="Malzemeyi sil" className="remove" onClick={() => setMaterials(materials.filter((_, n) => n !== i))}>×</button>}
             </div>
           ))}
