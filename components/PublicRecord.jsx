@@ -9,7 +9,7 @@ export default function PublicRecord({ record, qrDataUrl }) {
   return (
     <div className="shell">
       <div className="topbar">
-        <div className="brand"><div className="brandmark">AK</div><div className="brandtext"><strong>AÇILIM KUTU</strong><span>PPWR Packaging Compliance Portal</span></div></div>
+        <div className="brand corporate-brand"><div className="brand-logo-surface"><img className="brand-logo" src="https://acilimkutu.com/wp-content/uploads/2020/02/logo.webp" alt="Açılım Kutu" /></div><div className="brandtext brand-system"><strong>PPWR KAYIT SİSTEMİ</strong><span>Packaging Compliance Portal</span></div></div>
         <div className="lang"><button className="active">TR</button><button disabled>EN</button></div>
       </div>
 
@@ -66,7 +66,7 @@ export default function PublicRecord({ record, qrDataUrl }) {
         </div><div><div className="package">{record.product_image_url ? <img className="product-image" src={record.product_image_url} alt={record.product_name || "Ürün görseli"}/> : <div className="image-placeholder">Ürün/CAD görseli</div>}</div></div></div></section>
       </div>
 
-      <div className="footer"><strong>{COMPANY.name}</strong><br/>{COMPANY.address} · {COMPANY.email} · {COMPANY.phone}<br/><span>PPWR belge erişimi ve ambalaj kayıt sistemi</span></div>
+      <div className="footer"><img className="footer-logo" src="https://acilimkutu.com/wp-content/uploads/2020/02/logo.webp" alt="Açılım Kutu" /><strong>{COMPANY.name}</strong><br/>{COMPANY.address} · {COMPANY.email} · {COMPANY.phone}<br/><span>PPWR belge erişimi ve ambalaj kayıt sistemi</span></div>
     </div>
   );
 }
