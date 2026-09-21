@@ -379,7 +379,7 @@ export default function RecordEditor({ recordData, recordId, action }) {
           <h2>5. Belge ve görsel dosyaları</h2>
           <p className="admin-hint">Dosyalar tarayıcıdan doğrudan Vercel Blob'a yüklenir. PDF ve görseller için dosya başına üst sınır 50 MB'dır.</p>
           <div className="form-grid">
-            <label>AB Uygunluk Beyanı PDF <span className="optional-mark">İsteğe bağlı</span><input type="file" name="declaration_file" accept="application/pdf" /></label>
+            <label>AB Uygunluk Beyanı PDF<input type="file" name="declaration_file" accept="application/pdf" /></label>
             <div className="existing-file">{recordData.declaration_url ? <a href={recordData.declaration_url} target="_blank" rel="noreferrer">{recordData.declaration_filename || "Mevcut PDF'yi aç"}</a> : "Dosya yüklenmedi"}</div>
 
             <Input label="Teknik Dosya Başlığı" name="technical_title" defaultValue={recordData.technical_title} />
@@ -397,8 +397,8 @@ export default function RecordEditor({ recordData, recordId, action }) {
           <p className="admin-hint">Bu bölüm sistem tarafından otomatik takip edilir; ayrıca doldurmanız gerekmez.</p>
           <div className="auto-status-grid">
             <div className="auto-status"><span>Ambalaj kimliği</span><strong>{ppwrId && recordData.product_name ? "Hazır" : "Temel bilgiler bekleniyor"}</strong></div>
-            <div className="auto-status"><span>AB Uygunluk Beyanı</span><strong>{recordData.declaration_url ? "PDF eklendi" : "İsteğe bağlı"}</strong></div>
-            <div className="auto-status"><span>Teknik dosya</span><strong>{recordData.technical_url ? "PDF eklendi" : "İsteğe bağlı"}</strong></div>
+            <div className="auto-status"><span>AB Uygunluk Beyanı</span><strong>{recordData.declaration_url ? "PDF eklendi" : "PDF yok"}</strong></div>
+            <div className="auto-status"><span>Teknik dosya</span><strong>{recordData.technical_url ? "PDF eklendi" : "PDF yok"}</strong></div>
           </div>
         </section>
 
