@@ -12,7 +12,18 @@ function declarationIdFromPpwr(ppwrId) {
   return String(ppwrId || "").trim().replace(/(^|[-_.])APB(?=([-_.]|$))/i, "$1DOC");
 }
 
-const DEFAULT_PACKAGE_CLASS = "Taşıma ambalajı";
+function normalizePapCode(value) {
+  const code = String(value || "").replace(/\s+/g, "").toUpperCase();
+  return code === "PAP20" || code === "PAP21" ? code : "";
+}
+
+function papDescription(code) {
+  if (code === "PAP20") return "Oluklu mukavva";
+  if (code === "PAP21") return "Oluklu olmayan karton / mukavva";
+  return "Malzeme kodunu seçin";
+}
+
+const DEFAULT_PACKAGE_CLASS = "Yedek Parça Kutusu";
 const DEFAULT_PACKAGE_TYPE = "Kağıt / Karton Ambalaj";
 const DEFAULT_PRODUCTION_FACILITY = `${COMPANY.name} — İTOB OSB, Menderes / İzmir / Türkiye`;
 
@@ -35,6 +46,7 @@ export default function RevisionEditor({ revision, recordId, action }) {
   const [uploadState, setUploadState] = useState("");
   const [uploadError, setUploadError] = useState("");
   const [ppwrId, setPpwrId] = useState(revision.ppwr_id || "");
+  const [papCode, setPapCode] = useState(normalizePapCode(revision.usage_cycle));
   const [submitting, setSubmitting] = useState(false);
   const locked = revision.status === "published" || revision.status === "archived";
 
@@ -136,9 +148,7 @@ export default function RevisionEditor({ revision, recordId, action }) {
             </label>
             <Input label="Açılım İş Kodu" name="job_code" defaultValue={revision.job_code} />
             <Input label="Müşteri" name="customer" defaultValue={revision.customer} />
-            <Input label="Müşteri Referansı" name="customer_ref" defaultValue={revision.customer_ref} />
             <Input label="Sistem Kodu" name="system_code" defaultValue={revision.system_code} />
-            <Input label="İthalatçı" name="importer" defaultValue={revision.importer} />
             <Input label="Son İnceleme Tarihi" name="review_date" defaultValue={revision.review_date} placeholder="GG.AA.YYYY" />
           </div>
         </section>
@@ -148,10 +158,25 @@ export default function RevisionEditor({ revision, recordId, action }) {
           <p className="admin-hint">Ambalaj sınıfı, ambalaj tipi ve üretim tesisi standart değerlerle otomatik gelir; gerektiğinde kayıt özelinde değiştirilebilir.</p>
           <div className="form-grid">
             <Input label="Ürün / Ambalaj Adı" name="product_name" defaultValue={revision.product_name} className="span2" />
-            <Input label="Ambalaj Sınıfı" name="package_class" defaultValue={revision.package_class || DEFAULT_PACKAGE_CLASS} />
+            <label>
+              Ambalaj Sınıfı
+              <input name="package_class" value={DEFAULT_PACKAGE_CLASS} readOnly />
+            </label>
             <Input label="Ambalaj Tipi" name="package_type" defaultValue={revision.package_type || DEFAULT_PACKAGE_TYPE} />
             <Input label="Kullanım Amacı" name="usage_purpose" defaultValue={revision.usage_purpose} />
-            <Input label="Tek / Çok Kullanımlık" name="usage_cycle" defaultValue={revision.usage_cycle} />
+            <label className="pap-select-field">
+              PAP Malzeme Kodu
+              <select name="usage_cycle" value={papCode} onChange={(e) => setPapCode(e.target.value)}>
+                <option value="">Seçiniz</option>
+                <option value="PAP20">♻ PAP 20 — Oluklu mukavva</option>
+                <option value="PAP21">♻ PAP 21 — Oluklu olmayan karton / mukavva</option>
+              </select>
+              <span className="pap-preview">
+                <span className="pap-logo">♻</span>
+                <strong>{papCode ? papCode.replace("PAP", "PAP ") : "PAP"}</strong>
+                <small>{papDescription(papCode)}</small>
+              </span>
+            </label>
             <Input label="Toplam Ağırlık" name="total_weight" defaultValue={revision.total_weight} />
             <Input label="Üretim Tesisi" name="production_facility" defaultValue={revision.production_facility || DEFAULT_PRODUCTION_FACILITY} />
             <Input label="Ölçüler" name="dimensions" defaultValue={revision.dimensions} />
@@ -197,9 +222,7 @@ export default function RevisionEditor({ revision, recordId, action }) {
           <h2>5. Belge ve görsel dosyaları</h2>
           <p className="admin-hint">Dosyalar tarayıcıdan doğrudan Vercel Blob'a yüklenir. PDF ve görseller için dosya başına üst sınır 50 MB'dır.</p>
           <div className="form-grid">
-            <Input label="AB Uygunluk Beyanı Başlığı" name="declaration_title" defaultValue={revision.declaration_title} />
-            <Input label="AB Uygunluk Beyanı No" name="declaration_doc_no" defaultValue={revision.declaration_doc_no} />
-            <label>AB Uygunluk Beyanı PDF<input type="file" name="declaration_file" accept="application/pdf" /></label>
+            <label>AB Uygunluk Beyanı PDF <span className="optional-mark">İsteğe bağlı</span><input type="file" name="declaration_file" accept="application/pdf" /></label>
             <div className="existing-file">{revision.declaration_url ? <a href={revision.declaration_url} target="_blank" rel="noreferrer">{revision.declaration_filename || "Mevcut PDF'yi aç"}</a> : "Dosya yüklenmedi"}</div>
 
             <Input label="Teknik Dosya Başlığı" name="technical_title" defaultValue={revision.technical_title} />
@@ -209,20 +232,16 @@ export default function RevisionEditor({ revision, recordId, action }) {
 
             <label>Ürün / CAD Görseli<input type="file" name="product_image" accept="image/*" /></label>
             <div className="existing-file">{revision.product_image_url ? <a href={revision.product_image_url} target="_blank" rel="noreferrer">Mevcut görseli aç</a> : "Görsel yüklenmedi"}</div>
-            <Input label="Görsel Kaynağı" name="product_image_source" defaultValue={revision.product_image_source} />
-            <Input label="Görsel Erişim" name="product_image_access" defaultValue={revision.product_image_access} />
           </div>
         </section>
 
         <section className="admin-panel">
-          <h2>6. Durum ve onay</h2>
-          <div className="form-grid">
-            <Input label="Ambalaj Kimliği Durumu" name="identity_status" defaultValue={revision.identity_status} />
-            <Input label="Teknik Dokümantasyon Durumu" name="technical_status" defaultValue={revision.technical_status} />
-            <Input label="Uygunluk Beyanı Durumu" name="declaration_status" defaultValue={revision.declaration_status} />
-            <Input label="Hazırlayan" name="prepared_by" defaultValue={revision.prepared_by} />
-            <Input label="Kontrol Eden" name="checked_by" defaultValue={revision.checked_by} />
-            <Input label="Onaylayan" name="approved_by" defaultValue={revision.approved_by} />
+          <h2>6. Otomatik kayıt özeti</h2>
+          <p className="admin-hint">Bu bölüm sistem tarafından otomatik takip edilir; ayrıca doldurmanız gerekmez.</p>
+          <div className="auto-status-grid">
+            <div className="auto-status"><span>Ambalaj kimliği</span><strong>{ppwrId && revision.product_name ? "Hazır" : "Temel bilgiler bekleniyor"}</strong></div>
+            <div className="auto-status"><span>AB Uygunluk Beyanı</span><strong>{revision.declaration_url ? "PDF eklendi" : "İsteğe bağlı"}</strong></div>
+            <div className="auto-status"><span>Teknik dosya</span><strong>{revision.technical_url ? "PDF eklendi" : "İsteğe bağlı"}</strong></div>
           </div>
         </section>
 
