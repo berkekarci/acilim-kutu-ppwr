@@ -223,9 +223,7 @@ export async function publishRevisionAction(fd) {
   const publishReady = Boolean(
     rev.ppwr_id &&
     rev.product_name &&
-    rev.approved_by &&
-    rev.declaration_url &&
-    rev.technical_url
+    rev.approved_by
   );
   if (!publishReady) {
     redirect(`/yonetici/${recordId}?rev=${revisionId}&hata=yayin-zorunlu`);
