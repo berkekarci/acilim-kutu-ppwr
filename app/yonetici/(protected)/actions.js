@@ -77,7 +77,6 @@ function calculateEFluteMaterials(areaValue) {
     name: row.name,
     weight: area ? `${(area * row.gsm).toFixed(2)} g` : "Net alan bekleniyor",
     ratio: `%${((row.gsm / EFFECTIVE_GSM) * 100).toFixed(2)}`,
-    evidence: "E Dalga otomatik reçete",
   }));
 }
 
