@@ -42,8 +42,8 @@ const DEFAULT_PACKAGE_TYPE = "Kağıt / Karton Ambalaj";
 const DEFAULT_PRODUCTION_FACILITY = `${COMPANY.name} — İTOB OSB, Menderes / İzmir / Türkiye`;
 
 const E_FLUTE_TAKE_UP = 1.25;
-const LINER_GSM = 80;
-const FLUTING_GSM = 80;
+const LINER_GSM = 90;
+const FLUTING_GSM = 90;
 const KROME_GSM = 210;
 const GLUE_GSM = 12;
 const EFFECTIVE_GSM = LINER_GSM + (FLUTING_GSM * E_FLUTE_TAKE_UP) + KROME_GSM + GLUE_GSM;
@@ -68,8 +68,8 @@ function calculateEFluteWeight(areaValue) {
 function calculateEFluteMaterials(areaValue) {
   const area = parseAreaM2(areaValue);
   const rows = [
-    { name: "Liner 80 g/m²", gsm: LINER_GSM },
-    { name: "Fluting 80 g/m² × 1,25", gsm: FLUTING_GSM * E_FLUTE_TAKE_UP },
+    { name: "Liner 90 g/m²", gsm: LINER_GSM },
+    { name: "Fluting 90 g/m² × 1,25", gsm: FLUTING_GSM * E_FLUTE_TAKE_UP },
     { name: "Krome 210 g/m²", gsm: KROME_GSM },
     { name: "Tutkal 12 g/m²", gsm: GLUE_GSM },
   ];
