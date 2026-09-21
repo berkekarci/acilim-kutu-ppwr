@@ -348,6 +348,11 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
               <input name="net_area" value={netArea} onChange={(e) => setNetArea(e.target.value)} placeholder="Örn. 0,1763 m²" />
               <span className="admin-hint">Net alan değiştikçe toplam ağırlık, malzeme ağırlıkları ve yüzdelik oranlar anında yeniden hesaplanır.</span>
             </label>
+            <label>
+              Renk Sayısı
+              <input name="color_count" type="number" min="0" step="1" defaultValue={recordData.color_count || ""} placeholder="Örn. 4" />
+              <span className="admin-hint">Ambalaj üzerindeki baskı renk sayısını girin. Baskısız ise 0 yazabilirsiniz.</span>
+            </label>
             {consistencyCheck && (
               <div className={`consistency-check ${consistencyCheck.type} span2`}>
                 <strong>{consistencyCheck.type === "ok" ? "✓ Uyum kontrolü" : "⚠ Kontrol gerekli"}</strong>
