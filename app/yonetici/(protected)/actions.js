@@ -65,6 +65,26 @@ function calculateEFluteWeight(areaValue) {
   return `${(area * EFFECTIVE_GSM).toFixed(2)} g`;
 }
 
+function calculateEFluteMaterials(areaValue) {
+  const area = parseAreaM2(areaValue);
+  const rows = [
+    { name: "Liner 80 g/m²", gsm: LINER_GSM },
+    { name: "Fluting 80 g/m² × 1,25", gsm: FLUTING_GSM * E_FLUTE_TAKE_UP },
+    { name: "Krome 210 g/m²", gsm: KROME_GSM },
+    { name: "Tutkal 12 g/m²", gsm: GLUE_GSM },
+  ];
+  return rows.map((row) => ({
+    name: row.name,
+    weight: area ? `${(area * row.gsm).toFixed(2)} g` : "Net alan bekleniyor",
+    ratio: `%${((row.gsm / EFFECTIVE_GSM) * 100).toFixed(2)}`,
+    evidence: "E Dalga otomatik reçete",
+  }));
+}
+
+function isEFlute(value) {
+  return /e\s*dalga/i.test(String(value || ""));
+}
+
 async function audit(sql, recordId, revisionId, action, detail = {}) {
   await sql`
     INSERT INTO ppwr_audit_log (record_id, revision_id, action, actor, detail)
@@ -143,11 +163,14 @@ export async function saveRevisionAction(fd) {
   }
 
   const components = parseJson(s(fd, "components_json"));
-  const materials = parseJson(s(fd, "materials_json"));
+  const submittedMaterials = parseJson(s(fd, "materials_json"));
   const safeStatus = ["draft", "review", "cancelled"].includes(current.status) ? current.status : "draft";
   const ppwrId = s(fd, "ppwr_id");
+  const packageType = s(fd, "package_type") || DEFAULT_PACKAGE_TYPE;
   const netArea = s(fd, "net_area");
-  const calculatedWeight = calculateEFluteWeight(netArea);
+  const eFluteSelected = isEFlute(packageType);
+  const calculatedWeight = eFluteSelected ? calculateEFluteWeight(netArea) : s(fd, "total_weight");
+  const materials = eFluteSelected ? calculateEFluteMaterials(netArea) : submittedMaterials;
 
   try {
     await sql`
@@ -163,7 +186,7 @@ export async function saveRevisionAction(fd) {
         importer='',
         product_name=${s(fd, "product_name")},
         package_class=${DEFAULT_PACKAGE_CLASS},
-        package_type=${s(fd, "package_type") || DEFAULT_PACKAGE_TYPE},
+        package_type=${packageType},
         usage_purpose='',
         usage_cycle=${s(fd, "usage_cycle")},
         total_weight=${calculatedWeight},
