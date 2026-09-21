@@ -25,7 +25,7 @@ export default async function RecordPage({ params, searchParams }) {
 
       {sp?.kaydedildi && <div className="successbox">Değişiklikler kaydedildi ve kamu sayfasında doğrudan yayınlandı.</div>}
       {sp?.hata === "silme-onay" && <div className="errorbox">PPWR kaydı silinemedi: silme onayı alınamadı.</div>}
-      <RecordEditor recordData={current} recordId={recordId} action={saveRecordAction} />
+      <RecordEditor recordData={current} recordId={recordId} publicCode={record.code} action={saveRecordAction} />
     </div>
   );
 }
