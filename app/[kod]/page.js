@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
-import { getPublishedRecordByCode } from "@/lib/db";
+import { getPublicRecordByCode } from "@/lib/db";
 import PublicRecord from "@/components/PublicRecord";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ export async function generateMetadata({ params }) {
 export default async function PublicRecordPage({ params }) {
   const { kod } = await params;
   const code = decodeURIComponent(kod);
-  const record = await getPublishedRecordByCode(code);
+  const record = await getPublicRecordByCode(code);
   if (!record) notFound();
   const base = (process.env.NEXT_PUBLIC_APP_URL || "https://ppwr.acilimkutu.com").replace(/\/$/, "");
   const url = `${base}/${encodeURIComponent(record.public_code)}`;
