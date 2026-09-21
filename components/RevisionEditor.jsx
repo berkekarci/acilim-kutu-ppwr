@@ -21,6 +21,30 @@ const DEFAULT_PACKAGE_CLASS = "Yedek Parça Kutusu";
 const DEFAULT_PACKAGE_TYPE = "Kağıt / Karton Ambalaj";
 const DEFAULT_PRODUCTION_FACILITY = `${COMPANY.name} — İTOB OSB, Menderes / İzmir / Türkiye`;
 
+const E_FLUTE_TAKE_UP = 1.25;
+const LINER_GSM = 80;
+const FLUTING_GSM = 80;
+const KROME_GSM = 210;
+const GLUE_GSM = 12;
+const EFFECTIVE_GSM = LINER_GSM + (FLUTING_GSM * E_FLUTE_TAKE_UP) + KROME_GSM + GLUE_GSM;
+
+function parseAreaM2(value) {
+  const normalized = String(value || "")
+    .toLowerCase()
+    .replace("m²", "")
+    .replace("m2", "")
+    .replace(",", ".")
+    .trim();
+  const area = Number.parseFloat(normalized);
+  return Number.isFinite(area) && area > 0 ? area : 0;
+}
+
+function calculateEFluteWeight(areaValue) {
+  const area = parseAreaM2(areaValue);
+  if (!area) return "";
+  return (area * EFFECTIVE_GSM).toFixed(2);
+}
+
 function Input({ label, name, defaultValue, type = "text", className = "", placeholder = "" }) {
   return (
     <label className={className}>
@@ -41,7 +65,9 @@ export default function RevisionEditor({ revision, recordId, action }) {
   const [uploadError, setUploadError] = useState("");
   const [ppwrId, setPpwrId] = useState(revision.ppwr_id || "");
   const [papCode, setPapCode] = useState(normalizePapCode(revision.usage_cycle));
+  const [netArea, setNetArea] = useState(revision.net_area || "");
   const [submitting, setSubmitting] = useState(false);
+  const calculatedWeight = calculateEFluteWeight(netArea);
   const locked = revision.status === "published" || revision.status === "archived";
 
   const updateC = (i, key, value) => setComponents((items) => items.map((item, n) => (n === i ? { ...item, [key]: value } : item)));
@@ -169,10 +195,17 @@ export default function RevisionEditor({ revision, recordId, action }) {
                 <strong>{papCode ? papCode.replace("PAP", "PAP ") : "PAP"}</strong>
               </span>
             </label>
-            <Input label="Toplam Ağırlık" name="total_weight" defaultValue={revision.total_weight} />
+            <label>
+              Toplam Ağırlık
+              <input name="total_weight" value={calculatedWeight ? `${calculatedWeight} g` : ""} readOnly placeholder="Net alan girildiğinde otomatik hesaplanır" />
+              <span className="admin-hint">E Dalga otomatik reçete: 80 g liner + 80 g fluting × 1,25 + 210 g krome + 12 g/m² tutkal = 402 g/m².</span>
+            </label>
             <Input label="Üretim Tesisi" name="production_facility" defaultValue={revision.production_facility || DEFAULT_PRODUCTION_FACILITY} />
             <Input label="Ölçüler" name="dimensions" defaultValue={revision.dimensions} />
-            <Input label="Net Alan" name="net_area" defaultValue={revision.net_area} />
+            <label>
+              Net Alan
+              <input name="net_area" value={netArea} onChange={(e) => setNetArea(e.target.value)} placeholder="Örn. 0,1763 m²" />
+            </label>
           </div>
         </section>
 
