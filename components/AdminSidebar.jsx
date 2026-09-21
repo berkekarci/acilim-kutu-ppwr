@@ -9,7 +9,7 @@ export default function AdminSidebar({ records, logoutAction }) {
     const q = query.trim().toLocaleLowerCase("tr-TR");
     if (!q) return records;
     return records.filter((record) =>
-      [record.code, record.product_name, record.customer, record.revision_label, record.status]
+      [record.code, record.product_name, record.customer]
         .filter(Boolean)
         .some((value) => String(value).toLocaleLowerCase("tr-TR").includes(q))
     );
@@ -30,9 +30,9 @@ export default function AdminSidebar({ records, logoutAction }) {
       <div className="admin-records">
         {filtered.map((record) => (
           <Link href={`/yonetici/${record.id}`} key={record.id} className="admin-record">
-            <div className="record-line"><strong>{record.code}</strong><span className={`status-dot ${record.status || "draft"}`} /></div>
+            <div className="record-line"><strong>{record.code}</strong></div>
             <span>{record.product_name || "Ürün adı girilmedi"}</span>
-            <small>{record.revision_label || "—"} · {record.status || "—"}{record.has_published ? " · kamu yayında" : ""}</small>
+            <small>{record.customer || "Müşteri girilmedi"} · kamu sayfası aktif</small>
           </Link>
         ))}
         {!filtered.length && <p className="side-empty">Eşleşen kayıt yok.</p>}
