@@ -56,9 +56,9 @@ export default function PublicRecord({ record, qrDataUrl }) {
           <div className="component-total"><strong>Toplam / Total</strong><strong>{value(record.total_weight)}</strong></div>
         </section>
 
-        <section className="card"><h2>Malzeme Bileşimi / Material Composition</h2><div className="table-scroll"><table className="materials"><thead><tr><th>Malzeme</th><th>Ağırlık</th><th>Oran</th><th>Kanıt / Kaynak</th></tr></thead><tbody>
-          {materials.length ? materials.map((m,i)=><tr key={i}><td>{value(m.name)}</td><td>{value(m.weight)}</td><td>{value(m.ratio)}</td><td>{value(m.evidence)}</td></tr>) : <tr><td colSpan="4">Malzeme bileşimi girilmemiş.</td></tr>}
-          <tr><td><strong>Total</strong></td><td><strong>{value(record.total_weight)}</strong></td><td><strong>100%</strong></td><td>—</td></tr>
+        <section className="card"><h2>Malzeme Bileşimi / Material Composition</h2><div className="table-scroll"><table className="materials"><thead><tr><th>Malzeme</th><th>Ağırlık</th><th>Oran</th></tr></thead><tbody>
+          {materials.length ? materials.map((m,i)=><tr key={i}><td>{value(m.name)}</td><td>{value(m.weight)}</td><td>{value(m.ratio)}</td></tr>) : <tr><td colSpan="3">Malzeme bileşimi girilmemiş.</td></tr>}
+          <tr><td><strong>Total</strong></td><td><strong>{value(record.total_weight)}</strong></td><td><strong>100%</strong></td></tr>
         </tbody></table></div></section>
 
         <section className="card full"><h2>Belgeler / Documents</h2>
