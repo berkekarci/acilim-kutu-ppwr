@@ -234,7 +234,12 @@ export default function RecordEditor({ recordData, recordId, action }) {
     } catch (error) {
       setSubmitting(false);
       setUploadState("");
-      setUploadError(error?.message || "Dosya yükleme sırasında hata oluştu.");
+      const message = error?.message || "Dosya yükleme sırasında hata oluştu.";
+      setUploadError(
+        message.includes("Failed to retrieve the client token")
+          ? "Vercel Blob yükleme yetkisi alınamadı. Sunucuda BLOB_READ_WRITE_TOKEN eksik veya yanlış Blob store'a ait olabilir."
+          : message
+      );
       return;
     }
     return action(formData);
