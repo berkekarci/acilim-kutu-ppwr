@@ -45,6 +45,68 @@ function calculateEFluteWeight(areaValue) {
   return (area * EFFECTIVE_GSM).toFixed(2);
 }
 
+function calculateEFluteMaterials(areaValue) {
+  const area = parseAreaM2(areaValue);
+  const rows = [
+    { name: "Liner 80 g/m²", gsm: LINER_GSM },
+    { name: "Fluting 80 g/m² × 1,25", gsm: FLUTING_GSM * E_FLUTE_TAKE_UP },
+    { name: "Krome 210 g/m²", gsm: KROME_GSM },
+    { name: "Tutkal 12 g/m²", gsm: GLUE_GSM },
+  ];
+  return rows.map((row) => ({
+    name: row.name,
+    weight: area ? `${(area * row.gsm).toFixed(2)} g` : "Net alan bekleniyor",
+    ratio: `%${((row.gsm / EFFECTIVE_GSM) * 100).toFixed(2)}`,
+    evidence: "E Dalga otomatik reçete",
+  }));
+}
+
+function isEFlute(value) {
+  return /e\s*dalga/i.test(String(value || ""));
+}
+
+function parseDimensionsMm(value) {
+  const parts = String(value || "")
+    .toLowerCase()
+    .replace(/mm/g, "")
+    .replace(/,/g, ".")
+    .split(/[x×*]/)
+    .map((part) => Number.parseFloat(part.trim()))
+    .filter((part) => Number.isFinite(part));
+  return parts.length === 3 && parts.every((part) => part > 0) ? parts : null;
+}
+
+function getConsistencyCheck(dimensionsValue, areaValue, packageType, papCode) {
+  if (isEFlute(packageType) && papCode === "PAP21") {
+    return { type: "warn", text: "E Dalga oluklu mukavva ile PAP 21 seçimi uyumsuz görünüyor. Geri dönüşüm sınıfını kontrol edin." };
+  }
+
+  const dims = parseDimensionsMm(dimensionsValue);
+  const area = parseAreaM2(areaValue);
+
+  if (dimensionsValue && !dims) {
+    return { type: "warn", text: "Ölçü formatı anlaşılmadı. En × Boy × Yükseklik şeklinde ve mm cinsinden girin. Örnek: 30x81x700." };
+  }
+  if (!dims || !area) return null;
+
+  const [en, boy, yukseklik] = dims;
+  if ([en, boy, yukseklik].some((v) => v < 5 || v > 3000)) {
+    return { type: "warn", text: "En / boy / yükseklik değerlerinden biri olağandışı görünüyor. mm birimini kontrol edin." };
+  }
+
+  const closedSurfaceM2 = (2 * ((en * boy) + (en * yukseklik) + (boy * yukseklik))) / 1_000_000;
+  const ratio = area / closedSurfaceM2;
+
+  if (ratio < 0.9) {
+    return { type: "warn", text: `Net alan (${area.toFixed(4)} m²), girilen ölçülerden hesaplanan yaklaşık kapalı yüzey alanından (${closedSurfaceM2.toFixed(4)} m²) küçük görünüyor. Ölçü veya net alanı kontrol edin.` };
+  }
+  if (ratio > 2.2) {
+    return { type: "warn", text: `Net alan (${area.toFixed(4)} m²), girilen ölçülere göre olağandışı yüksek görünüyor. Ölçü, birim veya m² değerini kontrol edin.` };
+  }
+
+  return { type: "ok", text: `Ölçüler ile net alan birbiriyle uyumlu görünüyor. Yaklaşık geometrik yüzey: ${closedSurfaceM2.toFixed(4)} m².` };
+}
+
 function Input({ label, name, defaultValue, type = "text", className = "", placeholder = "" }) {
   return (
     <label className={className}>
@@ -65,9 +127,15 @@ export default function RevisionEditor({ revision, recordId, action }) {
   const [uploadError, setUploadError] = useState("");
   const [ppwrId, setPpwrId] = useState(revision.ppwr_id || "");
   const [papCode, setPapCode] = useState(normalizePapCode(revision.usage_cycle));
+  const [packageType, setPackageType] = useState(revision.package_type || DEFAULT_PACKAGE_TYPE);
   const [netArea, setNetArea] = useState(revision.net_area || "");
+  const [dimensions, setDimensions] = useState(revision.dimensions || "");
+  const [manualWeight, setManualWeight] = useState(revision.total_weight || "");
   const [submitting, setSubmitting] = useState(false);
-  const calculatedWeight = calculateEFluteWeight(netArea);
+  const eFluteSelected = isEFlute(packageType);
+  const calculatedWeight = eFluteSelected ? calculateEFluteWeight(netArea) : "";
+  const visibleMaterials = eFluteSelected ? calculateEFluteMaterials(netArea) : materials;
+  const consistencyCheck = getConsistencyCheck(dimensions, netArea, packageType, papCode);
   const locked = revision.status === "published" || revision.status === "archived";
 
   const updateC = (i, key, value) => setComponents((items) => items.map((item, n) => (n === i ? { ...item, [key]: value } : item)));
@@ -143,7 +211,7 @@ export default function RevisionEditor({ revision, recordId, action }) {
       <input type="hidden" name="record_id" value={recordId} />
       <input type="hidden" name="revision_id" value={revision.id} />
       <input type="hidden" name="components_json" value={JSON.stringify(components)} />
-      <input type="hidden" name="materials_json" value={JSON.stringify(materials)} />
+      <input type="hidden" name="materials_json" value={JSON.stringify(visibleMaterials)} />
 
       {locked && (
         <div className="notice">
@@ -182,7 +250,13 @@ export default function RevisionEditor({ revision, recordId, action }) {
               Ambalaj Sınıfı
               <input name="package_class" value={DEFAULT_PACKAGE_CLASS} readOnly />
             </label>
-            <Input label="Ambalaj Tipi" name="package_type" defaultValue={revision.package_type || DEFAULT_PACKAGE_TYPE} />
+            <label>
+              Ambalaj Tipi
+              <select name="package_type" value={packageType} onChange={(e) => setPackageType(e.target.value)}>
+                <option value="Kağıt / Karton Ambalaj">Kağıt / Karton Ambalaj</option>
+                <option value="E Dalga Sıvamalı">E Dalga Sıvamalı</option>
+              </select>
+            </label>
             <label className="pap-select-field">
               Geri Dönüşüm Sınıfı
               <select name="usage_cycle" value={papCode} onChange={(e) => setPapCode(e.target.value)}>
@@ -197,15 +271,31 @@ export default function RevisionEditor({ revision, recordId, action }) {
             </label>
             <label>
               Toplam Ağırlık
-              <input name="total_weight" value={calculatedWeight ? `${calculatedWeight} g` : ""} readOnly placeholder="Net alan girildiğinde otomatik hesaplanır" />
-              <span className="admin-hint">E Dalga otomatik reçete: 80 g liner + 80 g fluting × 1,25 + 210 g krome + 12 g/m² tutkal = 402 g/m².</span>
+              <input
+                name="total_weight"
+                value={eFluteSelected ? (calculatedWeight ? `${calculatedWeight} g` : "") : manualWeight}
+                onChange={(e) => setManualWeight(e.target.value)}
+                readOnly={eFluteSelected}
+                placeholder={eFluteSelected ? "Net alan girildiğinde otomatik hesaplanır" : "Ağırlığı girin"}
+              />
+              <span className="admin-hint">{eFluteSelected ? "Ağırlık hesabı otomatik seçildi: E Dalga — 402 g/m²." : "E Dalga seçildiğinde ağırlık hesabı otomatikleşir."}</span>
             </label>
             <Input label="Üretim Tesisi" name="production_facility" defaultValue={revision.production_facility || DEFAULT_PRODUCTION_FACILITY} />
-            <Input label="Ölçüler" name="dimensions" defaultValue={revision.dimensions} />
+            <label>
+              En × Boy × Yükseklik (mm)
+              <input name="dimensions" value={dimensions} onChange={(e) => setDimensions(e.target.value)} placeholder="Örn. 30x81x700" />
+            </label>
             <label>
               Net Alan
               <input name="net_area" value={netArea} onChange={(e) => setNetArea(e.target.value)} placeholder="Örn. 0,1763 m²" />
+              <span className="admin-hint">{eFluteSelected ? "Net alan değiştikçe toplam ağırlık ve malzeme bileşimi anında yeniden hesaplanır." : "Otomatik hesaplama için Ambalaj Tipi olarak E Dalga Sıvamalı seçin."}</span>
             </label>
+            {consistencyCheck && (
+              <div className={`consistency-check ${consistencyCheck.type} span2`}>
+                <strong>{consistencyCheck.type === "ok" ? "✓ Uyum kontrolü" : "⚠ Kontrol gerekli"}</strong>
+                <span>{consistencyCheck.text}</span>
+              </div>
+            )}
           </div>
         </section>
 
@@ -228,17 +318,20 @@ export default function RevisionEditor({ revision, recordId, action }) {
 
         <section className="admin-panel">
           <div className="panel-title-row">
-            <h2>4. Malzeme bileşimi</h2>
-            <button type="button" className="admin-secondary" onClick={() => setMaterials([...materials, { name: "", weight: "", ratio: "", evidence: "" }])}>+ Malzeme</button>
+            <div>
+              <h2>4. Malzeme bileşimi</h2>
+              {eFluteSelected && <p className="admin-hint">E Dalga seçildiği için reçete otomatik oluşturuldu. Net alan değiştikçe ağırlıklar senkronize güncellenir.</p>}
+            </div>
+            {!eFluteSelected && <button type="button" className="admin-secondary" onClick={() => setMaterials([...materials, { name: "", weight: "", ratio: "", evidence: "" }])}>+ Malzeme</button>}
           </div>
-          {materials.length === 0 && <p className="admin-hint">Henüz malzeme satırı eklenmedi.</p>}
-          {materials.map((material, i) => (
+          {visibleMaterials.length === 0 && <p className="admin-hint">Henüz malzeme satırı eklenmedi.</p>}
+          {visibleMaterials.map((material, i) => (
             <div className="array-row materials-edit" key={i}>
-              <input placeholder="Malzeme" value={material.name || ""} onChange={(e) => updateM(i, "name", e.target.value)} />
-              <input placeholder="Ağırlık" value={material.weight || ""} onChange={(e) => updateM(i, "weight", e.target.value)} />
-              <input placeholder="Oran" value={material.ratio || ""} onChange={(e) => updateM(i, "ratio", e.target.value)} />
-              <input placeholder="Kanıt / kaynak" value={material.evidence || ""} onChange={(e) => updateM(i, "evidence", e.target.value)} />
-              <button type="button" aria-label="Malzemeyi sil" className="remove" onClick={() => setMaterials(materials.filter((_, n) => n !== i))}>×</button>
+              <input placeholder="Malzeme" value={material.name || ""} readOnly={eFluteSelected} onChange={(e) => updateM(i, "name", e.target.value)} />
+              <input placeholder="Ağırlık" value={material.weight || ""} readOnly={eFluteSelected} onChange={(e) => updateM(i, "weight", e.target.value)} />
+              <input placeholder="Oran" value={material.ratio || ""} readOnly={eFluteSelected} onChange={(e) => updateM(i, "ratio", e.target.value)} />
+              <input placeholder="Kanıt / kaynak" value={material.evidence || ""} readOnly={eFluteSelected} onChange={(e) => updateM(i, "evidence", e.target.value)} />
+              {!eFluteSelected && <button type="button" aria-label="Malzemeyi sil" className="remove" onClick={() => setMaterials(materials.filter((_, n) => n !== i))}>×</button>}
             </div>
           ))}
         </section>
