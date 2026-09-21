@@ -158,7 +158,7 @@ function safeFilename(value) {
   return String(value || "file").replace(/[^\p{L}\p{N}._-]+/gu, "-").slice(0, 150);
 }
 
-export default function RecordEditor({ recordData, recordId, action }) {
+export default function RecordEditor({ recordData, recordId, publicCode, action }) {
   const [uploadState, setUploadState] = useState("");
   const [uploadError, setUploadError] = useState("");
   const [ppwrId, setPpwrId] = useState(recordData.ppwr_id || "");
@@ -168,12 +168,17 @@ export default function RecordEditor({ recordData, recordId, action }) {
   const [netArea, setNetArea] = useState(recordData.net_area || "");
   const [dimensions, setDimensions] = useState(recordData.dimensions || "");
   const [submitting, setSubmitting] = useState(false);
+  const [removedFiles, setRemovedFiles] = useState({
+    declaration: false,
+    technical: false,
+    productImage: false,
+  });
   const calculatedWeight = calculatePackageWeight(netArea, packageType);
   const visibleMaterials = calculatePackageMaterials(netArea, packageType);
   const consistencyCheck = getConsistencyCheck(dimensions, netArea, packageType, papCode);
 
 
-  async function uploadFormFile(formData, { fileField, urlField, filenameField, kind, label, type }) {
+  async function uploadFormFile(formData, { fileField, urlField, filenameField, removeField, kind, label, type }) {
     const file = formData.get(fileField);
     formData.delete(fileField);
     if (!(file instanceof File) || file.size === 0) return;
@@ -193,6 +198,7 @@ export default function RecordEditor({ recordData, recordId, action }) {
       }
     );
     formData.set(urlField, blob.url);
+    if (removeField) formData.set(removeField, "");
     if (type === "pdf") {
       const downloadField = urlField.replace("_url_input", "_download_url_input");
       formData.set(downloadField, blob.downloadUrl || blob.url);
@@ -208,6 +214,7 @@ export default function RecordEditor({ recordData, recordId, action }) {
         fileField: "declaration_file",
         urlField: "declaration_url_input",
         filenameField: "declaration_filename_input",
+        removeField: "declaration_remove",
         kind: "declaration",
         label: "AB Uygunluk Beyanı",
         type: "pdf",
@@ -216,6 +223,7 @@ export default function RecordEditor({ recordData, recordId, action }) {
         fileField: "technical_file",
         urlField: "technical_url_input",
         filenameField: "technical_filename_input",
+        removeField: "technical_remove",
         kind: "technical",
         label: "Teknik Dosya",
         type: "pdf",
@@ -224,6 +232,7 @@ export default function RecordEditor({ recordData, recordId, action }) {
         fileField: "product_image",
         urlField: "product_image_url_input",
         filenameField: "product_image_filename_input",
+        removeField: "product_image_remove",
         kind: "image",
         label: "Ürün / CAD görseli",
         type: "image",
@@ -248,6 +257,9 @@ export default function RecordEditor({ recordData, recordId, action }) {
       <input type="hidden" name="record_id" value={recordId} />
       <input type="hidden" name="data_id" value={recordData.id} />
       <input type="hidden" name="materials_json" value={JSON.stringify(visibleMaterials)} />
+      <input type="hidden" name="declaration_remove" value={removedFiles.declaration ? "1" : ""} />
+      <input type="hidden" name="technical_remove" value={removedFiles.technical ? "1" : ""} />
+      <input type="hidden" name="product_image_remove" value={removedFiles.productImage ? "1" : ""} />
       {uploadError && <div className="errorbox">{uploadError}</div>}
       {uploadState && <div className="uploadbox">{uploadState}</div>}
 
@@ -359,16 +371,37 @@ export default function RecordEditor({ recordData, recordId, action }) {
           <h2>4. Belge ve görsel dosyaları</h2>
           <p className="admin-hint">Dosyalar tarayıcıdan doğrudan Vercel Blob'a yüklenir. PDF ve görseller için dosya başına üst sınır 50 MB'dır.</p>
           <div className="form-grid">
-            <label>AB Uygunluk Beyanı PDF<input type="file" name="declaration_file" accept="application/pdf" /></label>
-            <div className="existing-file">{recordData.declaration_url ? <a href={recordData.declaration_url} target="_blank" rel="noreferrer">{recordData.declaration_filename || "Mevcut PDF'yi aç"}</a> : "Dosya yüklenmedi"}</div>
+            <label>AB Uygunluk Beyanı PDF<input type="file" name="declaration_file" accept="application/pdf" onChange={(e) => e.target.files?.length && setRemovedFiles((v) => ({ ...v, declaration: false }))} /></label>
+            <div className="existing-file">
+              {recordData.declaration_url && !removedFiles.declaration ? (
+                <div className="existing-file-row">
+                  <a href={`/belge/${encodeURIComponent(publicCode)}/uygunluk-beyani`} target="_blank" rel="noreferrer">{recordData.declaration_filename || "Mevcut PDF'yi aç"}</a>
+                  <button type="button" className="file-remove-btn" title="Belgeyi kaldır" aria-label="AB Uygunluk Beyanı PDF'ini kaldır" onClick={() => setRemovedFiles((v) => ({ ...v, declaration: true }))}>×</button>
+                </div>
+              ) : removedFiles.declaration ? <span className="file-remove-pending">Kaldırılacak. İsterseniz yukarıdan yeni PDF seçebilirsiniz.</span> : "Dosya yüklenmedi"}
+            </div>
 
             <Input label="Teknik Dosya Başlığı" name="technical_title" defaultValue={recordData.technical_title} />
             <Input label="Teknik Dosya No" name="technical_doc_no" defaultValue={recordData.technical_doc_no} />
-            <label>Teknik Dosya PDF<input type="file" name="technical_file" accept="application/pdf" /></label>
-            <div className="existing-file">{recordData.technical_url ? <a href={recordData.technical_url} target="_blank" rel="noreferrer">{recordData.technical_filename || "Mevcut PDF'yi aç"}</a> : "Dosya yüklenmedi"}</div>
+            <label>Teknik Dosya PDF<input type="file" name="technical_file" accept="application/pdf" onChange={(e) => e.target.files?.length && setRemovedFiles((v) => ({ ...v, technical: false }))} /></label>
+            <div className="existing-file">
+              {recordData.technical_url && !removedFiles.technical ? (
+                <div className="existing-file-row">
+                  <a href={`/belge/${encodeURIComponent(publicCode)}/teknik-dosya`} target="_blank" rel="noreferrer">{recordData.technical_filename || "Mevcut PDF'yi aç"}</a>
+                  <button type="button" className="file-remove-btn" title="Belgeyi kaldır" aria-label="Teknik Dosya PDF'ini kaldır" onClick={() => setRemovedFiles((v) => ({ ...v, technical: true }))}>×</button>
+                </div>
+              ) : removedFiles.technical ? <span className="file-remove-pending">Kaldırılacak. İsterseniz yukarıdan yeni PDF seçebilirsiniz.</span> : "Dosya yüklenmedi"}
+            </div>
 
-            <label>Ürün / CAD Görseli<input type="file" name="product_image" accept="image/*" /></label>
-            <div className="existing-file">{recordData.product_image_url ? <a href={recordData.product_image_url} target="_blank" rel="noreferrer">Mevcut görseli aç</a> : "Görsel yüklenmedi"}</div>
+            <label>Ürün / CAD Görseli<input type="file" name="product_image" accept="image/*" onChange={(e) => e.target.files?.length && setRemovedFiles((v) => ({ ...v, productImage: false }))} /></label>
+            <div className="existing-file">
+              {recordData.product_image_url && !removedFiles.productImage ? (
+                <div className="existing-file-row">
+                  <a href={recordData.product_image_url} target="_blank" rel="noreferrer">Mevcut görseli aç</a>
+                  <button type="button" className="file-remove-btn" title="Görseli kaldır" aria-label="Ürün görselini kaldır" onClick={() => setRemovedFiles((v) => ({ ...v, productImage: true }))}>×</button>
+                </div>
+              ) : removedFiles.productImage ? <span className="file-remove-pending">Kaldırılacak. İsterseniz yukarıdan yeni görsel seçebilirsiniz.</span> : "Görsel yüklenmedi"}
+            </div>
           </div>
         </section>
 
