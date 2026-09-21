@@ -37,7 +37,7 @@ function declarationIdFromPpwr(ppwrId) {
   return value.replace(/(^|[-_.])APB(?=([-_.]|$))/i, "$1DOC");
 }
 
-const DEFAULT_PACKAGE_CLASS = "Taşıma ambalajı";
+const DEFAULT_PACKAGE_CLASS = "Yedek Parça Kutusu";
 const DEFAULT_PACKAGE_TYPE = "Kağıt / Karton Ambalaj";
 const DEFAULT_PRODUCTION_FACILITY = `${COMPANY.name} — İTOB OSB, Menderes / İzmir / Türkiye`;
 
@@ -132,11 +132,11 @@ export async function saveRevisionAction(fd) {
         declaration_id=${declarationIdFromPpwr(ppwrId)},
         job_code=${s(fd, "job_code")},
         customer=${s(fd, "customer")},
-        customer_ref=${s(fd, "customer_ref")},
+        customer_ref='',
         system_code=${s(fd, "system_code")},
-        importer=${s(fd, "importer")},
+        importer='',
         product_name=${s(fd, "product_name")},
-        package_class=${s(fd, "package_class") || DEFAULT_PACKAGE_CLASS},
+        package_class=${DEFAULT_PACKAGE_CLASS},
         package_type=${s(fd, "package_type") || DEFAULT_PACKAGE_TYPE},
         usage_purpose=${s(fd, "usage_purpose")},
         usage_cycle=${s(fd, "usage_cycle")},
@@ -146,11 +146,11 @@ export async function saveRevisionAction(fd) {
         net_area=${s(fd, "net_area")},
         components=CAST(${JSON.stringify(components)} AS jsonb),
         materials=CAST(${JSON.stringify(materials)} AS jsonb),
-        identity_status=${s(fd, "identity_status")},
-        technical_status=${s(fd, "technical_status")},
-        declaration_status=${s(fd, "declaration_status")},
-        declaration_title=${s(fd, "declaration_title")},
-        declaration_doc_no=${s(fd, "declaration_doc_no")},
+        identity_status='Otomatik',
+        technical_status=CASE WHEN technical_url IS NOT NULL THEN 'PDF eklendi' ELSE 'İsteğe bağlı' END,
+        declaration_status=CASE WHEN declaration_url IS NOT NULL THEN 'PDF eklendi' ELSE 'İsteğe bağlı' END,
+        declaration_title='',
+        declaration_doc_no='',
         declaration_url=COALESCE(${nullable(fd, "declaration_url_input")}, declaration_url),
         declaration_download_url=COALESCE(${nullable(fd, "declaration_download_url_input")}, declaration_download_url),
         declaration_filename=COALESCE(${nullable(fd, "declaration_filename_input")}, declaration_filename),
@@ -160,11 +160,11 @@ export async function saveRevisionAction(fd) {
         technical_download_url=COALESCE(${nullable(fd, "technical_download_url_input")}, technical_download_url),
         technical_filename=COALESCE(${nullable(fd, "technical_filename_input")}, technical_filename),
         product_image_url=COALESCE(${nullable(fd, "product_image_url_input")}, product_image_url),
-        product_image_source=${s(fd, "product_image_source")},
-        product_image_access=${s(fd, "product_image_access")},
-        prepared_by=${s(fd, "prepared_by")},
-        checked_by=${s(fd, "checked_by")},
-        approved_by=${s(fd, "approved_by")},
+        product_image_source='',
+        product_image_access='',
+        prepared_by='',
+        checked_by='',
+        approved_by='',
         review_date=${s(fd, "review_date")},
         updated_at=NOW()
       WHERE id=${revisionId} AND record_id=${recordId}
@@ -239,8 +239,7 @@ export async function publishRevisionAction(fd) {
   if (!rev) throw new Error("Revizyon bulunamadı.");
   const publishReady = Boolean(
     rev.ppwr_id &&
-    rev.product_name &&
-    rev.approved_by
+    rev.product_name
   );
   if (!publishReady) {
     redirect(`/yonetici/${recordId}?rev=${revisionId}&hata=yayin-zorunlu`);
