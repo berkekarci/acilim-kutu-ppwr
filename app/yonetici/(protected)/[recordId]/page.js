@@ -1,31 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getAuditLog, getRecordById, getRevisions } from "@/lib/db";
+import { getRecordById, getRevisions } from "@/lib/db";
 import RevisionEditor from "@/components/RevisionEditor";
 import { newRevisionAction, publishRevisionAction, saveRevisionAction } from "../actions";
-
-const ACTION_LABELS = {
-  record_created: "Kayıt oluşturuldu",
-  revision_created: "Yeni revizyon oluşturuldu",
-  revision_saved: "Revizyon kaydedildi",
-  revision_published: "Revizyon yayınlandı",
-};
-
-function formatDate(value) {
-  if (!value) return "—";
-  try {
-    return new Intl.DateTimeFormat("tr-TR", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Istanbul" }).format(new Date(value));
-  } catch {
-    return String(value);
-  }
-}
 
 export default async function RecordPage({ params, searchParams }) {
   const { recordId } = await params;
   const sp = await searchParams;
   const record = await getRecordById(recordId);
   if (!record) notFound();
-  const [revisions, audit] = await Promise.all([getRevisions(recordId), getAuditLog(recordId, 20)]);
+  const revisions = await getRevisions(recordId);
   if (!revisions.length) notFound();
 
   const selected = revisions.find((revision) => String(revision.id) === String(sp?.rev)) || revisions[0];
@@ -40,7 +24,7 @@ export default async function RecordPage({ params, searchParams }) {
 
       {sp?.kaydedildi && <div className="successbox">Revizyon kaydedildi.</div>}
       {sp?.yayinlandi && <div className="successbox">Revizyon yayınlandı. Bu kodun kamu URL'si artık bu revizyonu gösteriyor; önceki yayın arşivlendi.</div>}
-      {sp?.hata === "yayin-zorunlu" && <div className="errorbox">Yayın için yalnızca PPWR ID, ürün adı ve Onaylayan alanları zorunludur. PDF belgeleri isteğe bağlıdır.</div>}
+      {sp?.hata === "yayin-zorunlu" && <div className="errorbox">Yayın için PPWR ID ve ürün adı zorunludur. PDF belgeleri isteğe bağlıdır.</div>}
       {sp?.hata === "revizyon" && <div className="errorbox">Revizyon etiketi boş/geçersiz. / ? # % karakterleri kullanılamaz.</div>}
       {sp?.hata === "revizyon-tekrar" && <div className="errorbox">Bu revizyon etiketi bu kayıt altında zaten kullanılıyor.</div>}
 
@@ -69,19 +53,6 @@ export default async function RecordPage({ params, searchParams }) {
       </div>
 
       <RevisionEditor revision={selected} recordId={recordId} action={saveRevisionAction} />
-
-      <section className="admin-panel audit-panel">
-        <div className="panel-title-row"><h2>İşlem Geçmişi</h2><span className="admin-hint">Son {audit.length} işlem</span></div>
-        <div className="audit-list">
-          {audit.map((item) => (
-            <div className="audit-row" key={item.id}>
-              <div><strong>{ACTION_LABELS[item.action] || item.action}</strong><span>{item.actor || "—"}</span></div>
-              <time>{formatDate(item.created_at)}</time>
-            </div>
-          ))}
-          {!audit.length && <p className="admin-hint">Henüz işlem geçmişi yok.</p>}
-        </div>
-      </section>
     </div>
   );
 }
