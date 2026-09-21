@@ -158,7 +158,7 @@ export default function RevisionEditor({ revision, recordId, action }) {
             </label>
             <Input label="Ambalaj Tipi" name="package_type" defaultValue={revision.package_type || DEFAULT_PACKAGE_TYPE} />
             <label className="pap-select-field">
-              PAP Malzeme Kodu
+              Geri Dönüşüm Sınıfı
               <select name="usage_cycle" value={papCode} onChange={(e) => setPapCode(e.target.value)}>
                 <option value="">Seçiniz</option>
                 <option value="PAP20">♻ PAP 20</option>
