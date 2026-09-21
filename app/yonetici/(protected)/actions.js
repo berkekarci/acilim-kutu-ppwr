@@ -170,7 +170,6 @@ export async function saveRecordAction(fd) {
     SELECT * FROM ppwr_revisions WHERE id=${dataId} AND record_id=${recordId} LIMIT 1
   `)[0];
   if (!current) throw new Error("PPWR kayıt verisi bulunamadı.");
-  const components = parseJson(s(fd, "components_json"));
   const ppwrId = s(fd, "ppwr_id");
   const packageType = normalizePackageType(s(fd, "package_type"));
   const netArea = s(fd, "net_area");
@@ -202,7 +201,7 @@ export async function saveRecordAction(fd) {
         production_facility=${s(fd, "production_facility") || DEFAULT_PRODUCTION_FACILITY},
         dimensions=${s(fd, "dimensions")},
         net_area=${netArea},
-        components=CAST(${JSON.stringify(components)} AS jsonb),
+        components='[]'::jsonb,
         materials=CAST(${JSON.stringify(materials)} AS jsonb),
         identity_status='Otomatik',
         technical_status=CASE WHEN technical_url IS NOT NULL THEN 'PDF eklendi' ELSE 'PDF yok' END,
