@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { ensureSchema, getSql } from "@/lib/db";
+import { COMPANY } from "@/lib/company";
 
 function s(fd, key) {
   return String(fd.get(key) || "").trim();
@@ -30,6 +31,15 @@ function validCode(code) {
 function validRevisionLabel(label) {
   return label.length > 0 && label.length <= 80 && !/[\/?#%]/.test(label);
 }
+
+function declarationIdFromPpwr(ppwrId) {
+  const value = String(ppwrId || "").trim();
+  return value.replace(/(^|[-_.])APB(?=([-_.]|$))/i, "$1DOC");
+}
+
+const DEFAULT_PACKAGE_CLASS = "Taşıma ambalajı";
+const DEFAULT_PACKAGE_TYPE = "Kağıt / Karton Ambalaj";
+const DEFAULT_PRODUCTION_FACILITY = `${COMPANY.name} — İTOB OSB, Menderes / İzmir / Türkiye`;
 
 async function audit(sql, recordId, revisionId, action, detail = {}) {
   await sql`
@@ -63,9 +73,16 @@ export async function createRecordAction(fd) {
   try {
     const rows = await sql`INSERT INTO ppwr_records (code) VALUES (${code}) RETURNING id`;
     const recordId = rows[0].id;
+    const ppwrId = s(fd, "ppwr_id");
     const rev = await sql`
-      INSERT INTO ppwr_revisions (record_id, revision_label, ppwr_id, product_name, customer)
-      VALUES (${recordId}, ${revisionLabel}, ${s(fd, "ppwr_id")}, ${s(fd, "product_name")}, ${s(fd, "customer")})
+      INSERT INTO ppwr_revisions (
+        record_id, revision_label, ppwr_id, declaration_id, product_name, customer,
+        package_class, package_type, production_facility
+      )
+      VALUES (
+        ${recordId}, ${revisionLabel}, ${ppwrId}, ${declarationIdFromPpwr(ppwrId)}, ${s(fd, "product_name")}, ${s(fd, "customer")},
+        ${DEFAULT_PACKAGE_CLASS}, ${DEFAULT_PACKAGE_TYPE}, ${DEFAULT_PRODUCTION_FACILITY}
+      )
       RETURNING id
     `;
     await audit(sql, recordId, rev[0].id, "record_created", { code });
@@ -103,28 +120,28 @@ export async function saveRevisionAction(fd) {
 
   const components = parseJson(s(fd, "components_json"));
   const materials = parseJson(s(fd, "materials_json"));
-  const requestedStatus = s(fd, "status");
-  const safeStatus = ["draft", "review", "cancelled"].includes(requestedStatus) ? requestedStatus : "draft";
+  const safeStatus = ["draft", "review", "cancelled"].includes(current.status) ? current.status : "draft";
+  const ppwrId = s(fd, "ppwr_id");
 
   try {
     await sql`
       UPDATE ppwr_revisions SET
         revision_label=${revisionLabel},
         status=${safeStatus},
-        ppwr_id=${s(fd, "ppwr_id")},
-        declaration_id=${s(fd, "declaration_id")},
+        ppwr_id=${ppwrId},
+        declaration_id=${declarationIdFromPpwr(ppwrId)},
         job_code=${s(fd, "job_code")},
         customer=${s(fd, "customer")},
         customer_ref=${s(fd, "customer_ref")},
         system_code=${s(fd, "system_code")},
         importer=${s(fd, "importer")},
         product_name=${s(fd, "product_name")},
-        package_class=${s(fd, "package_class")},
-        package_type=${s(fd, "package_type")},
+        package_class=${s(fd, "package_class") || DEFAULT_PACKAGE_CLASS},
+        package_type=${s(fd, "package_type") || DEFAULT_PACKAGE_TYPE},
         usage_purpose=${s(fd, "usage_purpose")},
         usage_cycle=${s(fd, "usage_cycle")},
         total_weight=${s(fd, "total_weight")},
-        production_facility=${s(fd, "production_facility")},
+        production_facility=${s(fd, "production_facility") || DEFAULT_PRODUCTION_FACILITY},
         dimensions=${s(fd, "dimensions")},
         net_area=${s(fd, "net_area")},
         components=CAST(${JSON.stringify(components)} AS jsonb),
