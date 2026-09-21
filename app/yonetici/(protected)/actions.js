@@ -138,7 +138,7 @@ export async function saveRevisionAction(fd) {
         product_name=${s(fd, "product_name")},
         package_class=${DEFAULT_PACKAGE_CLASS},
         package_type=${s(fd, "package_type") || DEFAULT_PACKAGE_TYPE},
-        usage_purpose=${s(fd, "usage_purpose")},
+        usage_purpose='',
         usage_cycle=${s(fd, "usage_cycle")},
         total_weight=${s(fd, "total_weight")},
         production_facility=${s(fd, "production_facility") || DEFAULT_PRODUCTION_FACILITY},
