@@ -57,7 +57,7 @@ export default function PublicRecord({ record, qrDataUrl }) {
         <div>
           <div className="eyebrow">Regulation (EU) 2025/40</div>
           <h1>PPWR Uyumluluk / Compliance</h1>
-          <p>Ambalaj kimliği, izlenebilirlik, teknik dokümantasyon ve kontrollü belge erişimi için Açılım Kutu dijital PPWR kayıt ekranı. / Açılım Kutu digital PPWR record page for packaging identification, traceability, technical documentation and controlled document access.</p>
+          <p>PPWR kayıt ve belge erişim ekranı. / PPWR record and document access.</p>
           <div className="hero-meta">
             <div className="metric"><span>PPWR ID</span><strong>{value(record.ppwr_id, record.public_code)}</strong></div>
             <div className="metric"><span>Beyan ID / Declaration ID</span><strong>{value(record.declaration_id)}</strong></div>
