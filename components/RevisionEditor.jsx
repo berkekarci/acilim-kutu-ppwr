@@ -17,12 +17,6 @@ function normalizePapCode(value) {
   return code === "PAP20" || code === "PAP21" ? code : "";
 }
 
-function papDescription(code) {
-  if (code === "PAP20") return "Oluklu mukavva";
-  if (code === "PAP21") return "Oluklu olmayan karton / mukavva";
-  return "Malzeme kodunu seçin";
-}
-
 const DEFAULT_PACKAGE_CLASS = "Yedek Parça Kutusu";
 const DEFAULT_PACKAGE_TYPE = "Kağıt / Karton Ambalaj";
 const DEFAULT_PRODUCTION_FACILITY = `${COMPANY.name} — İTOB OSB, Menderes / İzmir / Türkiye`;
@@ -168,13 +162,12 @@ export default function RevisionEditor({ revision, recordId, action }) {
               PAP Malzeme Kodu
               <select name="usage_cycle" value={papCode} onChange={(e) => setPapCode(e.target.value)}>
                 <option value="">Seçiniz</option>
-                <option value="PAP20">♻ PAP 20 — Oluklu mukavva</option>
-                <option value="PAP21">♻ PAP 21 — Oluklu olmayan karton / mukavva</option>
+                <option value="PAP20">♻ PAP 20</option>
+                <option value="PAP21">♻ PAP 21</option>
               </select>
               <span className="pap-preview">
                 <span className="pap-logo">♻</span>
                 <strong>{papCode ? papCode.replace("PAP", "PAP ") : "PAP"}</strong>
-                <small>{papDescription(papCode)}</small>
               </span>
             </label>
             <Input label="Toplam Ağırlık" name="total_weight" defaultValue={revision.total_weight} />
