@@ -135,7 +135,6 @@ export default function RevisionEditor({ revision, recordId, action }) {
   const calculatedWeight = eFluteSelected ? calculateEFluteWeight(netArea) : "";
   const visibleMaterials = eFluteSelected ? calculateEFluteMaterials(netArea) : materials;
   const consistencyCheck = getConsistencyCheck(dimensions, netArea, packageType, papCode);
-  const locked = revision.status === "published" || revision.status === "archived";
 
   const updateC = (i, key, value) => setComponents((items) => items.map((item, n) => (n === i ? { ...item, [key]: value } : item)));
   const updateM = (i, key, value) => setMaterials((items) => items.map((item, n) => (n === i ? { ...item, [key]: value } : item)));
@@ -211,20 +210,13 @@ export default function RevisionEditor({ revision, recordId, action }) {
       <input type="hidden" name="revision_id" value={revision.id} />
       <input type="hidden" name="components_json" value={JSON.stringify(components)} />
       <input type="hidden" name="materials_json" value={JSON.stringify(visibleMaterials)} />
-
-      {locked && (
-        <div className="notice">
-          <strong>REVİZYON KİLİTLİ:</strong> Yayınlanmış veya arşivlenmiş revizyon doğrudan değiştirilmez. Değişiklik için yeni revizyon oluşturun.
-        </div>
-      )}
       {uploadError && <div className="errorbox">{uploadError}</div>}
       {uploadState && <div className="uploadbox">{uploadState}</div>}
 
-      <fieldset disabled={locked || submitting}>
+      <fieldset disabled={submitting}>
         <section className="admin-panel">
           <h2>1. Kayıt ve müşteri bilgileri</h2>
           <div className="form-grid">
-            <Input label="Revizyon" name="revision_label" defaultValue={revision.revision_label} placeholder="Rev.00" />
             <label>
               PPWR ID
               <input name="ppwr_id" value={ppwrId} onChange={(e) => setPpwrId(e.target.value)} />
@@ -362,7 +354,7 @@ export default function RevisionEditor({ revision, recordId, action }) {
         </section>
 
         <div className="sticky-save">
-          <button className="admin-primary" type="submit">{submitting ? "Kaydediliyor…" : "Değişiklikleri Kaydet"}</button>
+          <button className="admin-primary" type="submit">{submitting ? "Kaydediliyor ve yayınlanıyor…" : "Kaydet ve Yayınla"}</button>
         </div>
       </fieldset>
     </form>
