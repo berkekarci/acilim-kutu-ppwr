@@ -266,3 +266,32 @@ export async function publishRevisionAction(fd) {
   if (rec?.code) revalidatePath(`/${rec.code}`);
   redirect(`/yonetici/${recordId}?rev=${revisionId}&yayinlandi=1`);
 }
+
+
+export async function deleteRecordAction(fd) {
+  await requireAdmin();
+  await ensureSchema();
+
+  const sql = getSql();
+  const recordId = s(fd, "record_id");
+  const confirmation = s(fd, "confirm_delete");
+
+  if (confirmation !== "EVET") {
+    redirect(`/yonetici/${recordId}?hata=silme-onay`);
+  }
+
+  const record = (await sql`
+    SELECT id, code FROM ppwr_records WHERE id=${recordId} LIMIT 1
+  `)[0];
+
+  if (!record) {
+    redirect("/yonetici");
+  }
+
+  await sql`DELETE FROM ppwr_audit_log WHERE record_id=${recordId}`;
+  await sql`DELETE FROM ppwr_records WHERE id=${recordId}`;
+
+  revalidatePath("/yonetici");
+  revalidatePath(`/${record.code}`);
+  redirect("/yonetici?silindi=1");
+}
