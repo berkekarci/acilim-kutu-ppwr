@@ -5,7 +5,7 @@ Bu proje, `ppwr.acilimkutu.com` için bağımsız Vercel/Next.js uygulamasıdır
 ## Sabit mimari
 
 - Kamu kaydı: `https://ppwr.acilimkutu.com/[kod]`
-- Yönetici paneli: `https://ppwr.acilimkutu.com/yonetici`
+- Yönetici paneli: `https://ppwr.acilimkutu.com/admin`
 - Kamu tarafında toplu kayıt listesi **yoktur**.
 - Kod uzunluğu sabit değildir. Harf, sayı ve tire kullanılabilir. `/ ? # %` tek segment URL yapısını bozduğu için kabul edilmez.
 - Her PPWR kodu tek bir güncel kayıt taşır.
@@ -28,4 +28,4 @@ Yeni PPWR kaydı oluşturulduğunda kamu sayfası oluşur. Yönetici ekranındak
 
 ## Yönetici veri alanları
 
-PPWR ID ve otomatik Declaration ID; Açılım iş kodu; müşteri; sistem kodu; ürün/ambalaj adı; ambalaj sınıfı ve tipi; geri dönüşüm sınıfı; otomatik toplam ağırlık; üretim tesisi; en × boy × yükseklik; net alan; ambalaj komponentleri; otomatik/manuel malzeme bileşimi; isteğe bağlı PDF'ler; ürün/CAD görseli ve inceleme tarihi.
+PPWR ID ve otomatik Declaration ID; Açılım iş kodu; müşteri; sistem kodu; ürün/ambalaj adı; ambalaj sınıfı ve tipi; geri dönüşüm sınıfı; otomatik toplam ağırlık; üretim tesisi; en × boy × yükseklik; net alan; otomatik malzeme bileşimi; PDF belgeleri; ürün/CAD görseli ve inceleme tarihi.
