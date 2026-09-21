@@ -159,7 +159,6 @@ function safeFilename(value) {
 }
 
 export default function RecordEditor({ recordData, recordId, action }) {
-  const [components, setComponents] = useState(safeArray(recordData.components));
   const [uploadState, setUploadState] = useState("");
   const [uploadError, setUploadError] = useState("");
   const [ppwrId, setPpwrId] = useState(recordData.ppwr_id || "");
@@ -173,7 +172,6 @@ export default function RecordEditor({ recordData, recordId, action }) {
   const visibleMaterials = calculatePackageMaterials(netArea, packageType);
   const consistencyCheck = getConsistencyCheck(dimensions, netArea, packageType, papCode);
 
-  const updateC = (i, key, value) => setComponents((items) => items.map((item, n) => (n === i ? { ...item, [key]: value } : item)));
 
   async function uploadFormFile(formData, { fileField, urlField, filenameField, kind, label, type }) {
     const file = formData.get(fileField);
@@ -249,7 +247,6 @@ export default function RecordEditor({ recordData, recordId, action }) {
     <form action={submitWithUploads} className="record-form">
       <input type="hidden" name="record_id" value={recordId} />
       <input type="hidden" name="data_id" value={recordData.id} />
-      <input type="hidden" name="components_json" value={JSON.stringify(components)} />
       <input type="hidden" name="materials_json" value={JSON.stringify(visibleMaterials)} />
       {uploadError && <div className="errorbox">{uploadError}</div>}
       {uploadState && <div className="uploadbox">{uploadState}</div>}
@@ -342,25 +339,8 @@ export default function RecordEditor({ recordData, recordId, action }) {
 
         <section className="admin-panel">
           <div className="panel-title-row">
-            <h2>3. Ambalaj komponentleri</h2>
-            <button type="button" className="admin-secondary" onClick={() => setComponents([...components, { name: "", material: "", details: "", weight: "" }])}>+ Komponent</button>
-          </div>
-          {components.length === 0 && <p className="admin-hint">Henüz komponent eklenmedi.</p>}
-          {components.map((component, i) => (
-            <div className="array-row" key={i}>
-              <input placeholder="Komponent" value={component.name || ""} onChange={(e) => updateC(i, "name", e.target.value)} />
-              <input placeholder="Malzeme" value={component.material || ""} onChange={(e) => updateC(i, "material", e.target.value)} />
-              <input placeholder="Ölçü / gramaj / açıklama" value={component.details || ""} onChange={(e) => updateC(i, "details", e.target.value)} />
-              <input placeholder="Ağırlık" value={component.weight || ""} onChange={(e) => updateC(i, "weight", e.target.value)} />
-              <button type="button" aria-label="Komponenti sil" className="remove" onClick={() => setComponents(components.filter((_, n) => n !== i))}>×</button>
-            </div>
-          ))}
-        </section>
-
-        <section className="admin-panel">
-          <div className="panel-title-row">
             <div>
-              <h2>4. Malzeme bileşimi</h2>
+              <h2>3. Malzeme bileşimi</h2>
               <p className="admin-hint">{packageType} reçetesi otomatik oluşturuldu. Net alan değiştikçe ağırlıklar ve yüzdelik oranlar senkronize güncellenir.</p>
             </div>
 
@@ -376,7 +356,7 @@ export default function RecordEditor({ recordData, recordId, action }) {
         </section>
 
         <section className="admin-panel">
-          <h2>5. Belge ve görsel dosyaları</h2>
+          <h2>4. Belge ve görsel dosyaları</h2>
           <p className="admin-hint">Dosyalar tarayıcıdan doğrudan Vercel Blob'a yüklenir. PDF ve görseller için dosya başına üst sınır 50 MB'dır.</p>
           <div className="form-grid">
             <label>AB Uygunluk Beyanı PDF<input type="file" name="declaration_file" accept="application/pdf" /></label>
@@ -393,7 +373,7 @@ export default function RecordEditor({ recordData, recordId, action }) {
         </section>
 
         <section className="admin-panel">
-          <h2>6. Otomatik kayıt özeti</h2>
+          <h2>5. Otomatik kayıt özeti</h2>
           <p className="admin-hint">Bu bölüm sistem tarafından otomatik takip edilir; ayrıca doldurmanız gerekmez.</p>
           <div className="auto-status-grid">
             <div className="auto-status"><span>Ambalaj kimliği</span><strong>{ppwrId && recordData.product_name ? "Hazır" : "Temel bilgiler bekleniyor"}</strong></div>
