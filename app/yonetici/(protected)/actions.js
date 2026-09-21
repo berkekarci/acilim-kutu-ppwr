@@ -238,6 +238,7 @@ export async function saveRecordAction(fd) {
         production_facility=${s(fd, "production_facility") || DEFAULT_PRODUCTION_FACILITY},
         dimensions=${s(fd, "dimensions")},
         net_area=${netArea},
+        color_count=${s(fd, "color_count")},
         components='[]'::jsonb,
         materials=CAST(${JSON.stringify(materials)} AS jsonb),
         identity_status='Otomatik',
