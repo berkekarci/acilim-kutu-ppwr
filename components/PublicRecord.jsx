@@ -27,14 +27,14 @@ export default function PublicRecord({ record, qrDataUrl }) {
           <div className="hero-meta">
             <div className="metric"><span>PPWR ID</span><strong>{value(record.ppwr_id, record.public_code)}</strong></div>
             <div className="metric"><span>Declaration ID</span><strong>{value(record.declaration_id)}</strong></div>
-            <div className="metric"><span>Revision</span><strong>{value(record.revision_label)} / PUBLISHED</strong></div>
+            <div className="metric"><span>Kayıt Kodu</span><strong>{value(record.public_code)}</strong></div>
             <div className="metric"><span>Last review</span><strong>{value(record.review_date)}</strong></div>
           </div>
         </div>
         <div className="qrbox"><div className="qrinner"><img src={qrDataUrl} alt={`${record.public_code} QR`} /><b>{record.public_code}</b><small>Scan for digital record</small></div></div>
       </section>
 
-      <div className="notice"><strong>YAYINLANMIŞ KAYIT:</strong> Bu sayfa yalnızca onaylanmış güncel revizyonu gösterir. Yeni revizyon yayınlandığında önceki revizyon yönetim sisteminde arşivlenerek izlenebilirlik korunur.</div>
+      <div className="notice"><strong>GÜNCEL KAYIT:</strong> Bu sayfa yönetim panelinde kaydedilen en güncel PPWR bilgilerini gösterir. Yönetici panelindeki değişiklikler kaydedildiğinde doğrudan bu sayfaya yansır.</div>
 
       <div className="grid">
         <section className="card"><h2>Firma Bilgileri / Company Information</h2><dl className="info">
@@ -68,7 +68,7 @@ export default function PublicRecord({ record, qrDataUrl }) {
         </section>
 
         <section className="card full"><h2>Ürün Görseli / Product Visualization</h2><div className="visual"><div>
-          <dl className="info"><dt>Ölçüler</dt><dd>{value(record.dimensions)}</dd><dt>Net Alan</dt><dd>{value(record.net_area)}</dd><dt>Revizyon</dt><dd>{value(record.revision_label)}</dd></dl>
+          <dl className="info"><dt>Ölçüler</dt><dd>{value(record.dimensions)}</dd><dt>Net Alan</dt><dd>{value(record.net_area)}</dd></dl>
         </div><div><div className="package">{record.product_image_url ? <img className="product-image" src={record.product_image_url} alt={record.product_name || "Ürün görseli"}/> : <div className="image-placeholder">Ürün/CAD görseli</div>}</div></div></div></section>
       </div>
 
