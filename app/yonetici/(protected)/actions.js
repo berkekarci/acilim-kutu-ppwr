@@ -34,15 +34,49 @@ function declarationIdFromPpwr(ppwrId) {
 }
 
 const DEFAULT_PACKAGE_CLASS = "Yedek Parça Kutusu";
-const DEFAULT_PACKAGE_TYPE = "Kağıt / Karton Ambalaj";
+const DEFAULT_PACKAGE_TYPE = "Krome";
 const DEFAULT_PRODUCTION_FACILITY = `${COMPANY.name} — İTOB OSB, Menderes / İzmir / Türkiye`;
 
 const E_FLUTE_TAKE_UP = 1.25;
-const LINER_GSM = 90;
-const FLUTING_GSM = 90;
-const KROME_GSM = 210;
-const GLUE_GSM = 12;
-const EFFECTIVE_GSM = LINER_GSM + (FLUTING_GSM * E_FLUTE_TAKE_UP) + KROME_GSM + GLUE_GSM;
+const B_FLUTE_TAKE_UP = 1.35;
+
+const PACKAGE_RECIPES = {
+  Krome: [
+    { name: "Krome Karton 330 g/m²", gsm: 330 },
+  ],
+  "E Dalga": [
+    { name: "Liner 90 g/m²", gsm: 90 },
+    { name: "E Fluting 90 g/m² × 1,25", gsm: 90 * E_FLUTE_TAKE_UP },
+    { name: "Krome 210 g/m²", gsm: 210 },
+    { name: "Tutkal 12 g/m²", gsm: 12 },
+  ],
+  "B Dalga": [
+    { name: "Liner 90 g/m²", gsm: 90 },
+    { name: "B Fluting 90 g/m² × 1,35", gsm: 90 * B_FLUTE_TAKE_UP },
+    { name: "Krome 210 g/m²", gsm: 210 },
+  ],
+  "EB Dalga": [
+    { name: "Liner 90 g/m² (1)", gsm: 90 },
+    { name: "E Fluting 90 g/m² × 1,25", gsm: 90 * E_FLUTE_TAKE_UP },
+    { name: "Liner 90 g/m² (2)", gsm: 90 },
+    { name: "B Fluting 90 g/m² × 1,35", gsm: 90 * B_FLUTE_TAKE_UP },
+    { name: "Krome 210 g/m²", gsm: 210 },
+  ],
+};
+
+function normalizePackageType(value) {
+  const raw = String(value || "").trim();
+  if (raw === "E Dalga Sıvamalı") return "E Dalga";
+  return PACKAGE_RECIPES[raw] ? raw : DEFAULT_PACKAGE_TYPE;
+}
+
+function recipeFor(packageType) {
+  return PACKAGE_RECIPES[normalizePackageType(packageType)];
+}
+
+function effectiveGsm(packageType) {
+  return recipeFor(packageType).reduce((sum, row) => sum + row.gsm, 0);
+}
 
 function parseAreaM2(value) {
   const normalized = String(value || "")
@@ -55,29 +89,21 @@ function parseAreaM2(value) {
   return Number.isFinite(area) && area > 0 ? area : 0;
 }
 
-function calculateEFluteWeight(areaValue) {
+function calculatePackageWeight(areaValue, packageType) {
   const area = parseAreaM2(areaValue);
   if (!area) return "";
-  return `${(area * EFFECTIVE_GSM).toFixed(2)} g`;
+  return `${(area * effectiveGsm(packageType)).toFixed(2)} g`;
 }
 
-function calculateEFluteMaterials(areaValue) {
+function calculatePackageMaterials(areaValue, packageType) {
   const area = parseAreaM2(areaValue);
-  const rows = [
-    { name: "Liner 90 g/m²", gsm: LINER_GSM },
-    { name: "Fluting 90 g/m² × 1,25", gsm: FLUTING_GSM * E_FLUTE_TAKE_UP },
-    { name: "Krome 210 g/m²", gsm: KROME_GSM },
-    { name: "Tutkal 12 g/m²", gsm: GLUE_GSM },
-  ];
-  return rows.map((row) => ({
+  const recipe = recipeFor(packageType);
+  const totalGsm = effectiveGsm(packageType);
+  return recipe.map((row) => ({
     name: row.name,
     weight: area ? `${(area * row.gsm).toFixed(2)} g` : "Net alan bekleniyor",
-    ratio: `%${((row.gsm / EFFECTIVE_GSM) * 100).toFixed(2)}`,
+    ratio: `%${((row.gsm / totalGsm) * 100).toFixed(2)}`,
   }));
-}
-
-function isEFlute(value) {
-  return /e\s*dalga/i.test(String(value || ""));
 }
 
 async function audit(sql, recordId, dataId, action, detail = {}) {
@@ -145,13 +171,11 @@ export async function saveRecordAction(fd) {
   `)[0];
   if (!current) throw new Error("PPWR kayıt verisi bulunamadı.");
   const components = parseJson(s(fd, "components_json"));
-  const submittedMaterials = parseJson(s(fd, "materials_json"));
   const ppwrId = s(fd, "ppwr_id");
-  const packageType = s(fd, "package_type") || DEFAULT_PACKAGE_TYPE;
+  const packageType = normalizePackageType(s(fd, "package_type"));
   const netArea = s(fd, "net_area");
-  const eFluteSelected = isEFlute(packageType);
-  const calculatedWeight = eFluteSelected ? calculateEFluteWeight(netArea) : s(fd, "total_weight");
-  const materials = eFluteSelected ? calculateEFluteMaterials(netArea) : submittedMaterials;
+  const calculatedWeight = calculatePackageWeight(netArea, packageType);
+  const materials = calculatePackageMaterials(netArea, packageType);
 
   // Her PPWR kaydı yalnızca tek güncel veri satırı taşır.
   await sql`DELETE FROM ppwr_audit_log WHERE record_id=${recordId} AND revision_id IS NOT NULL AND revision_id<>${dataId}`;
@@ -173,7 +197,7 @@ export async function saveRecordAction(fd) {
         package_class=${DEFAULT_PACKAGE_CLASS},
         package_type=${packageType},
         usage_purpose='',
-        usage_cycle=${s(fd, "usage_cycle")},
+        usage_cycle=${s(fd, "usage_cycle") || (packageType === "Krome" ? "PAP21" : "PAP20")},
         total_weight=${calculatedWeight},
         production_facility=${s(fd, "production_facility") || DEFAULT_PRODUCTION_FACILITY},
         dimensions=${s(fd, "dimensions")},
