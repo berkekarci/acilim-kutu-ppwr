@@ -18,15 +18,49 @@ function normalizePapCode(value) {
 }
 
 const DEFAULT_PACKAGE_CLASS = "Yedek Parça Kutusu";
-const DEFAULT_PACKAGE_TYPE = "Kağıt / Karton Ambalaj";
+const DEFAULT_PACKAGE_TYPE = "Krome";
 const DEFAULT_PRODUCTION_FACILITY = `${COMPANY.name} — İTOB OSB, Menderes / İzmir / Türkiye`;
 
 const E_FLUTE_TAKE_UP = 1.25;
-const LINER_GSM = 90;
-const FLUTING_GSM = 90;
-const KROME_GSM = 210;
-const GLUE_GSM = 12;
-const EFFECTIVE_GSM = LINER_GSM + (FLUTING_GSM * E_FLUTE_TAKE_UP) + KROME_GSM + GLUE_GSM;
+const B_FLUTE_TAKE_UP = 1.35;
+
+const PACKAGE_RECIPES = {
+  Krome: [
+    { name: "Krome Karton 330 g/m²", gsm: 330 },
+  ],
+  "E Dalga": [
+    { name: "Liner 90 g/m²", gsm: 90 },
+    { name: "E Fluting 90 g/m² × 1,25", gsm: 90 * E_FLUTE_TAKE_UP },
+    { name: "Krome 210 g/m²", gsm: 210 },
+    { name: "Tutkal 12 g/m²", gsm: 12 },
+  ],
+  "B Dalga": [
+    { name: "Liner 90 g/m²", gsm: 90 },
+    { name: "B Fluting 90 g/m² × 1,35", gsm: 90 * B_FLUTE_TAKE_UP },
+    { name: "Krome 210 g/m²", gsm: 210 },
+  ],
+  "EB Dalga": [
+    { name: "Liner 90 g/m² (1)", gsm: 90 },
+    { name: "E Fluting 90 g/m² × 1,25", gsm: 90 * E_FLUTE_TAKE_UP },
+    { name: "Liner 90 g/m² (2)", gsm: 90 },
+    { name: "B Fluting 90 g/m² × 1,35", gsm: 90 * B_FLUTE_TAKE_UP },
+    { name: "Krome 210 g/m²", gsm: 210 },
+  ],
+};
+
+function normalizePackageType(value) {
+  const raw = String(value || "").trim();
+  if (raw === "E Dalga Sıvamalı") return "E Dalga";
+  return PACKAGE_RECIPES[raw] ? raw : DEFAULT_PACKAGE_TYPE;
+}
+
+function recipeFor(packageType) {
+  return PACKAGE_RECIPES[normalizePackageType(packageType)];
+}
+
+function effectiveGsm(packageType) {
+  return recipeFor(packageType).reduce((sum, row) => sum + row.gsm, 0);
+}
 
 function parseAreaM2(value) {
   const normalized = String(value || "")
@@ -39,29 +73,33 @@ function parseAreaM2(value) {
   return Number.isFinite(area) && area > 0 ? area : 0;
 }
 
-function calculateEFluteWeight(areaValue) {
+function calculatePackageWeight(areaValue, packageType) {
   const area = parseAreaM2(areaValue);
   if (!area) return "";
-  return (area * EFFECTIVE_GSM).toFixed(2);
+  return (area * effectiveGsm(packageType)).toFixed(2);
 }
 
-function calculateEFluteMaterials(areaValue) {
+function calculatePackageMaterials(areaValue, packageType) {
   const area = parseAreaM2(areaValue);
-  const rows = [
-    { name: "Liner 90 g/m²", gsm: LINER_GSM },
-    { name: "Fluting 90 g/m² × 1,25", gsm: FLUTING_GSM * E_FLUTE_TAKE_UP },
-    { name: "Krome 210 g/m²", gsm: KROME_GSM },
-    { name: "Tutkal 12 g/m²", gsm: GLUE_GSM },
-  ];
-  return rows.map((row) => ({
+  const recipe = recipeFor(packageType);
+  const totalGsm = effectiveGsm(packageType);
+  return recipe.map((row) => ({
     name: row.name,
     weight: area ? `${(area * row.gsm).toFixed(2)} g` : "Net alan bekleniyor",
-    ratio: `%${((row.gsm / EFFECTIVE_GSM) * 100).toFixed(2)}`,
+    ratio: `%${((row.gsm / totalGsm) * 100).toFixed(2)}`,
   }));
 }
 
-function isEFlute(value) {
-  return /e\s*dalga/i.test(String(value || ""));
+function isCorrugated(value) {
+  return ["E Dalga", "B Dalga", "EB Dalga"].includes(normalizePackageType(value));
+}
+
+function expectedPapCode(packageType) {
+  return normalizePackageType(packageType) === "Krome" ? "PAP21" : "PAP20";
+}
+
+function formatEffectiveGsm(packageType) {
+  return effectiveGsm(packageType).toLocaleString("tr-TR", { maximumFractionDigits: 1 });
 }
 
 function parseDimensionsMm(value) {
@@ -76,8 +114,9 @@ function parseDimensionsMm(value) {
 }
 
 function getConsistencyCheck(dimensionsValue, areaValue, packageType, papCode) {
-  if (isEFlute(packageType) && papCode === "PAP21") {
-    return { type: "warn", text: "E Dalga oluklu mukavva ile PAP 21 seçimi uyumsuz görünüyor. Geri dönüşüm sınıfını kontrol edin." };
+  const expectedPap = expectedPapCode(packageType);
+  if (papCode && papCode !== expectedPap) {
+    return { type: "warn", text: `${normalizePackageType(packageType)} için geri dönüşüm sınıfı ${expectedPap.replace("PAP", "PAP ")} olmalıdır. Seçimi kontrol edin.` };
   }
 
   const dims = parseDimensionsMm(dimensionsValue);
@@ -121,23 +160,20 @@ function safeFilename(value) {
 
 export default function RecordEditor({ recordData, recordId, action }) {
   const [components, setComponents] = useState(safeArray(recordData.components));
-  const [materials, setMaterials] = useState(safeArray(recordData.materials));
   const [uploadState, setUploadState] = useState("");
   const [uploadError, setUploadError] = useState("");
   const [ppwrId, setPpwrId] = useState(recordData.ppwr_id || "");
-  const [papCode, setPapCode] = useState(normalizePapCode(recordData.usage_cycle));
-  const [packageType, setPackageType] = useState(recordData.package_type || DEFAULT_PACKAGE_TYPE);
+  const initialPackageType = normalizePackageType(recordData.package_type);
+  const [packageType, setPackageType] = useState(initialPackageType);
+  const [papCode, setPapCode] = useState(normalizePapCode(recordData.usage_cycle) || expectedPapCode(initialPackageType));
   const [netArea, setNetArea] = useState(recordData.net_area || "");
   const [dimensions, setDimensions] = useState(recordData.dimensions || "");
-  const [manualWeight, setManualWeight] = useState(recordData.total_weight || "");
   const [submitting, setSubmitting] = useState(false);
-  const eFluteSelected = isEFlute(packageType);
-  const calculatedWeight = eFluteSelected ? calculateEFluteWeight(netArea) : "";
-  const visibleMaterials = eFluteSelected ? calculateEFluteMaterials(netArea) : materials;
+  const calculatedWeight = calculatePackageWeight(netArea, packageType);
+  const visibleMaterials = calculatePackageMaterials(netArea, packageType);
   const consistencyCheck = getConsistencyCheck(dimensions, netArea, packageType, papCode);
 
   const updateC = (i, key, value) => setComponents((items) => items.map((item, n) => (n === i ? { ...item, [key]: value } : item)));
-  const updateM = (i, key, value) => setMaterials((items) => items.map((item, n) => (n === i ? { ...item, [key]: value } : item)));
 
   async function uploadFormFile(formData, { fileField, urlField, filenameField, kind, label, type }) {
     const file = formData.get(fileField);
@@ -243,9 +279,19 @@ export default function RecordEditor({ recordData, recordId, action }) {
             </label>
             <label>
               Ambalaj Tipi
-              <select name="package_type" value={packageType} onChange={(e) => setPackageType(e.target.value)}>
-                <option value="Kağıt / Karton Ambalaj">Kağıt / Karton Ambalaj</option>
-                <option value="E Dalga Sıvamalı">E Dalga Sıvamalı</option>
+              <select
+                name="package_type"
+                value={packageType}
+                onChange={(e) => {
+                  const nextType = e.target.value;
+                  setPackageType(nextType);
+                  setPapCode(expectedPapCode(nextType));
+                }}
+              >
+                <option value="Krome">Krome</option>
+                <option value="E Dalga">E Dalga</option>
+                <option value="B Dalga">B Dalga</option>
+                <option value="EB Dalga">EB Dalga</option>
               </select>
             </label>
             <label className="pap-select-field">
@@ -264,12 +310,11 @@ export default function RecordEditor({ recordData, recordId, action }) {
               Toplam Ağırlık
               <input
                 name="total_weight"
-                value={eFluteSelected ? (calculatedWeight ? `${calculatedWeight} g` : "") : manualWeight}
-                onChange={(e) => setManualWeight(e.target.value)}
-                readOnly={eFluteSelected}
-                placeholder={eFluteSelected ? "Net alan girildiğinde otomatik hesaplanır" : "Ağırlığı girin"}
+                value={calculatedWeight ? `${calculatedWeight} g` : ""}
+                readOnly
+                placeholder="Net alan girildiğinde otomatik hesaplanır"
               />
-              <span className="admin-hint">{eFluteSelected ? "Ağırlık hesabı otomatik seçildi: E Dalga — 424,5 g/m²." : "E Dalga seçildiğinde ağırlık hesabı otomatikleşir."}</span>
+              <span className="admin-hint">Otomatik reçete: {packageType} — {formatEffectiveGsm(packageType)} g/m².</span>
             </label>
             <Input label="Üretim Tesisi" name="production_facility" defaultValue={recordData.production_facility || DEFAULT_PRODUCTION_FACILITY} />
             <label>
@@ -279,7 +324,7 @@ export default function RecordEditor({ recordData, recordId, action }) {
             <label>
               Net Alan
               <input name="net_area" value={netArea} onChange={(e) => setNetArea(e.target.value)} placeholder="Örn. 0,1763 m²" />
-              <span className="admin-hint">{eFluteSelected ? "Net alan değiştikçe toplam ağırlık ve malzeme bileşimi anında yeniden hesaplanır." : "Otomatik hesaplama için Ambalaj Tipi olarak E Dalga Sıvamalı seçin."}</span>
+              <span className="admin-hint">Net alan değiştikçe toplam ağırlık, malzeme ağırlıkları ve yüzdelik oranlar anında yeniden hesaplanır.</span>
             </label>
             {consistencyCheck && (
               <div className={`consistency-check ${consistencyCheck.type} span2`}>
@@ -311,17 +356,16 @@ export default function RecordEditor({ recordData, recordId, action }) {
           <div className="panel-title-row">
             <div>
               <h2>4. Malzeme bileşimi</h2>
-              {eFluteSelected && <p className="admin-hint">E Dalga seçildiği için reçete otomatik oluşturuldu. Net alan değiştikçe ağırlıklar senkronize güncellenir.</p>}
+              <p className="admin-hint">{packageType} reçetesi otomatik oluşturuldu. Net alan değiştikçe ağırlıklar ve yüzdelik oranlar senkronize güncellenir.</p>
             </div>
-            {!eFluteSelected && <button type="button" className="admin-secondary" onClick={() => setMaterials([...materials, { name: "", weight: "", ratio: "" }])}>+ Malzeme</button>}
+
           </div>
           {visibleMaterials.length === 0 && <p className="admin-hint">Henüz malzeme satırı eklenmedi.</p>}
           {visibleMaterials.map((material, i) => (
             <div className="array-row materials-edit" key={i}>
-              <input placeholder="Malzeme" value={material.name || ""} readOnly={eFluteSelected} onChange={(e) => updateM(i, "name", e.target.value)} />
-              <input placeholder="Ağırlık" value={material.weight || ""} readOnly={eFluteSelected} onChange={(e) => updateM(i, "weight", e.target.value)} />
-              <input placeholder="Oran" value={material.ratio || ""} readOnly={eFluteSelected} onChange={(e) => updateM(i, "ratio", e.target.value)} />
-              {!eFluteSelected && <button type="button" aria-label="Malzemeyi sil" className="remove" onClick={() => setMaterials(materials.filter((_, n) => n !== i))}>×</button>}
+              <input placeholder="Malzeme" value={material.name || ""} readOnly />
+              <input placeholder="Ağırlık" value={material.weight || ""} readOnly />
+              <input placeholder="Oran" value={material.ratio || ""} readOnly />
             </div>
           ))}
         </section>
