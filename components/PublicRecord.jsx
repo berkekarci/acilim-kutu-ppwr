@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { COMPANY } from "@/lib/company";
 
 function value(v, fallback = "—") { return v || fallback; }
@@ -10,6 +13,7 @@ function papMeta(value) {
 }
 
 export default function PublicRecord({ record, qrDataUrl }) {
+  const [imageOpen, setImageOpen] = useState(false);
   const components = array(record.components);
   const materials = array(record.materials);
   const pap = papMeta(record.usage_cycle);
@@ -46,9 +50,9 @@ export default function PublicRecord({ record, qrDataUrl }) {
         </dl></section>
 
         <section className="card full"><h2>Kayıt Özeti / Record Summary</h2><div className="sub">Belge durumu sistem tarafından otomatik gösterilir.</div><div className="statusgrid">
-          <div className="check"><b>Ambalaj Kimliği</b><small>PPWR kimliği ve ürün bilgileri.</small><div className="flag ok">● Yayında</div></div>
-          <div className="check"><b>Teknik Dosya</b><small>Teknik PDF isteğe bağlıdır.</small><div className={record.technical_url ? "flag ok" : "flag"}>● {record.technical_url ? "PDF eklendi" : "İsteğe bağlı"}</div></div>
-          <div className="check"><b>AB Uygunluk Beyanı</b><small>Uygunluk beyanı PDF'i isteğe bağlıdır.</small><div className={record.declaration_url ? "flag ok" : "flag"}>● {record.declaration_url ? "PDF eklendi" : "İsteğe bağlı"}</div></div>
+          <div className="check"><b>Ambalaj Kimliği</b><div className="flag ok">● Yayında</div></div>
+          <div className="check"><b>Teknik Dosya</b><div className={record.technical_url ? "flag ok" : "flag"}>● {record.technical_url ? "PDF eklendi" : "PDF yok"}</div></div>
+          <div className="check"><b>AB Uygunluk Beyanı</b><div className={record.declaration_url ? "flag ok" : "flag"}>● {record.declaration_url ? "PDF eklendi" : "PDF yok"}</div></div>
         </div></section>
 
         <section className="card"><h2>Ambalaj Parçaları / Packaging Components</h2>
@@ -62,14 +66,21 @@ export default function PublicRecord({ record, qrDataUrl }) {
         </tbody></table></div></section>
 
         <section className="card full"><h2>Belgeler / Documents</h2>
-          {record.declaration_url && <div className="doc"><div className="docicon">PDF</div><div><h3>AB Uygunluk Beyanı</h3><p>İsteğe bağlı ek belge</p></div><div className="actions"><a className="btn" href={record.declaration_url} target="_blank" rel="noreferrer">Görüntüle</a><a className="btn primary" href={record.declaration_download_url || record.declaration_url}>PDF İndir</a></div></div>}
+          {record.declaration_url && <div className="doc"><div className="docicon">PDF</div><div><h3>AB Uygunluk Beyanı</h3></div><div className="actions"><a className="btn" href={record.declaration_url} target="_blank" rel="noreferrer">Görüntüle</a><a className="btn primary" href={record.declaration_download_url || record.declaration_url}>PDF İndir</a></div></div>}
           {record.technical_url && <div className="doc"><div className="docicon">PDF</div><div><h3>{value(record.technical_title,"Ambalaj Teknik Dosya Özeti")}</h3><p>{value(record.technical_doc_no)}</p></div><div className="actions"><a className="btn" href={record.technical_url} target="_blank" rel="noreferrer">Görüntüle</a><a className="btn primary" href={record.technical_download_url || record.technical_url}>PDF İndir</a></div></div>}
           {!record.declaration_url && !record.technical_url && <p className="muted">Yayınlanmış belge bulunmuyor.</p>}
         </section>
 
         <section className="card full"><h2>Ürün Görseli / Product Visualization</h2><div className="visual"><div>
           <dl className="info"><dt>Ölçüler</dt><dd>{value(record.dimensions)}</dd><dt>Net Alan</dt><dd>{value(record.net_area)}</dd></dl>
-        </div><div><div className="package">{record.product_image_url ? <img className="product-image" src={record.product_image_url} alt={record.product_name || "Ürün görseli"}/> : <div className="image-placeholder">Ürün/CAD görseli</div>}</div></div></div></section>
+        </div><div><div className="package">{record.product_image_url ? <button type="button" className="product-image-button" onClick={() => setImageOpen(true)} aria-label="Ürün görselini büyüt"><img className="product-image" src={record.product_image_url} alt={record.product_name || "Ürün görseli"}/><span className="image-zoom-hint">Büyüt</span></button> : <div className="image-placeholder">Ürün/CAD görseli</div>}</div></div></div></section>
+
+      {imageOpen && record.product_image_url && (
+        <div className="image-lightbox" role="dialog" aria-modal="true" aria-label="Büyütülmüş ürün görseli" onClick={() => setImageOpen(false)}>
+          <button type="button" className="image-lightbox-close" onClick={() => setImageOpen(false)} aria-label="Görseli kapat">×</button>
+          <img src={record.product_image_url} alt={record.product_name || "Ürün görseli"} onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
       </div>
 
       <div className="footer"><img className="footer-logo" src="https://acilimkutu.com/wp-content/uploads/2020/02/logo.webp" alt="Açılım Kutu" /><strong>{COMPANY.name}</strong><br/>{COMPANY.address} · {COMPANY.email} · {COMPANY.phone}<br/><span>PPWR belge erişimi ve ambalaj kayıt sistemi</span></div>
