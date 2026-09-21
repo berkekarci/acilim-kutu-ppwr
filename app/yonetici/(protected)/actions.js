@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { ensureSchema, getSql } from "@/lib/db";
 import { COMPANY } from "@/lib/company";
+import { del } from "@vercel/blob";
 
 function s(fd, key) {
   return String(fd.get(key) || "").trim();
@@ -13,6 +14,17 @@ function s(fd, key) {
 function nullable(fd, key) {
   const value = s(fd, key);
   return value || null;
+}
+
+async function deleteBlobQuietly(url) {
+  if (!url) return;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:" || !parsed.hostname.endsWith(".blob.vercel-storage.com")) return;
+    await del(url, { token: process.env.BLOB_READ_WRITE_TOKEN });
+  } catch {
+    // Veritabanı kaydı güncellense bile eski dosya temizliği kullanıcı işlemini engellemez.
+  }
 }
 
 function parseJson(value, fallback = []) {
@@ -258,6 +270,14 @@ export async function saveRecordAction(fd) {
   }
 
   await sql`UPDATE ppwr_records SET updated_at=NOW() WHERE id=${recordId}`;
+
+  const replacedOrRemoved = [
+    [current.declaration_url, declarationUrl],
+    [current.technical_url, technicalUrl],
+    [current.product_image_url, productImageUrl],
+  ].filter(([oldUrl, newUrl]) => oldUrl && oldUrl !== newUrl);
+
+  await Promise.all(replacedOrRemoved.map(([oldUrl]) => deleteBlobQuietly(oldUrl)));
   await audit(sql, recordId, dataId, "record_saved", { published: true });
   const rec = (await sql`SELECT code FROM ppwr_records WHERE id=${recordId} LIMIT 1`)[0];
   revalidatePath(`/admin/${recordId}`);
