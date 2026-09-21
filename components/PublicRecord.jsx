@@ -73,9 +73,18 @@ export default function PublicRecord({ record, qrDataUrl }) {
           <dt>Ambalaj Üreticisi / Packaging Manufacturer</dt><dd>{COMPANY.name}</dd><dt>E-posta / Email</dt><dd>{COMPANY.email}</dd><dt>Telefon / Phone</dt><dd>{COMPANY.phone}</dd><dt>Müşteri / Customer</dt><dd>{value(record.customer)}</dd>
         </dl></section>
 
-        <section className="card"><h2>Ambalaj Tanımı / Packaging Identification</h2><dl className="info">
-          <dt>Açılım İş Kodu / Job Code</dt><dd>{value(record.job_code)}</dd><dt>Sistem Kodu / System Code</dt><dd>{value(record.system_code)}</dd><dt>Ürün Tanımı / Product Description</dt><dd>{value(record.product_name)}</dd><dt>Ambalaj Sınıfı / Packaging Class</dt><dd>{packageClassLabel(record.package_class)}</dd><dt>Ambalaj Tipi / Packaging Type</dt><dd>{packageTypeLabel(record.package_type)}</dd><dt>Geri Dönüşüm Sınıfı / Recycling Class</dt><dd>{pap ? <span className="pap-public"><span className="pap-logo">♻</span><strong>{pap.code}</strong></span> : "—"}</dd><dt>Toplam Ağırlık / Total Weight</dt><dd>{value(record.total_weight)}</dd><dt>Üretim Tesisi / Production Facility</dt><dd>{value(record.production_facility)}</dd>
-        </dl></section>
+        <section className="card packaging-id-card"><h2>Ambalaj Tanımı / Packaging Identification</h2>
+          <div className="packaging-info">
+            <div className="packaging-info-row"><span>Açılım İş Kodu / Job Code</span><strong>{value(record.job_code)}</strong></div>
+            <div className="packaging-info-row"><span>Sistem Kodu / System Code</span><strong>{value(record.system_code)}</strong></div>
+            <div className="packaging-info-row"><span>Ürün Tanımı / Product Description</span><strong>{value(record.product_name)}</strong></div>
+            <div className="packaging-info-row"><span>Ambalaj Sınıfı / Packaging Class</span><strong>{packageClassLabel(record.package_class)}</strong></div>
+            <div className="packaging-info-row"><span>Ambalaj Tipi / Packaging Type</span><strong>{packageTypeLabel(record.package_type)}</strong></div>
+            <div className="packaging-info-row"><span>Geri Dönüşüm Sınıfı / Recycling Class</span><strong>{pap ? <span className="pap-public"><span className="pap-logo">♻</span><strong>{pap.code}</strong></span> : "—"}</strong></div>
+            <div className="packaging-info-row"><span>Toplam Ağırlık / Total Weight</span><strong>{value(record.total_weight)}</strong></div>
+            <div className="packaging-info-row"><span>Üretim Tesisi / Production Facility</span><strong>{value(record.production_facility)}</strong></div>
+          </div>
+        </section>
 
         <section className="card full"><h2>Kayıt Özeti / Record Summary</h2><div className="sub">Belge durumu sistem tarafından otomatik gösterilir. / Document status is displayed automatically by the system.</div><div className="statusgrid">
           <div className="check"><b>Ambalaj Kimliği / Packaging Identity</b><div className="flag ok">● Yayında / Published</div></div>
