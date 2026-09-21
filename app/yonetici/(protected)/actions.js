@@ -80,12 +80,12 @@ function isEFlute(value) {
   return /e\s*dalga/i.test(String(value || ""));
 }
 
-async function audit(sql, recordId, revisionId, action, detail = {}) {
+async function audit(sql, recordId, dataId, action, detail = {}) {
   await sql`
     INSERT INTO ppwr_audit_log (record_id, revision_id, action, actor, detail)
     VALUES (
       ${recordId},
-      ${revisionId},
+      ${dataId},
       ${action},
       ${process.env.ADMIN_USERNAME || "yonetici"},
       CAST(${JSON.stringify(detail)} AS jsonb)
@@ -131,19 +131,19 @@ export async function createRecordAction(fd) {
   }
 }
 
-export async function saveRevisionAction(fd) {
+export async function saveRecordAction(fd) {
   await requireAdmin();
   await ensureSchema();
   const sql = getSql();
   const recordId = s(fd, "record_id");
-  const revisionId = s(fd, "revision_id");
+  const dataId = s(fd, "data_id");
   const record = (await sql`SELECT * FROM ppwr_records WHERE id=${recordId} LIMIT 1`)[0];
   if (!record) throw new Error("Kayıt bulunamadı.");
 
   const current = (await sql`
-    SELECT * FROM ppwr_revisions WHERE id=${revisionId} AND record_id=${recordId} LIMIT 1
+    SELECT * FROM ppwr_revisions WHERE id=${dataId} AND record_id=${recordId} LIMIT 1
   `)[0];
-  if (!current) throw new Error("Revizyon bulunamadı.");
+  if (!current) throw new Error("PPWR kayıt verisi bulunamadı.");
   const components = parseJson(s(fd, "components_json"));
   const submittedMaterials = parseJson(s(fd, "materials_json"));
   const ppwrId = s(fd, "ppwr_id");
@@ -153,9 +153,9 @@ export async function saveRevisionAction(fd) {
   const calculatedWeight = eFluteSelected ? calculateEFluteWeight(netArea) : s(fd, "total_weight");
   const materials = eFluteSelected ? calculateEFluteMaterials(netArea) : submittedMaterials;
 
-  // Revizyon sistemi kaldırıldı: her PPWR kaydı yalnızca tek güncel veri satırı taşır.
-  await sql`DELETE FROM ppwr_audit_log WHERE record_id=${recordId} AND revision_id IS NOT NULL AND revision_id<>${revisionId}`;
-  await sql`DELETE FROM ppwr_revisions WHERE record_id=${recordId} AND id<>${revisionId}`;
+  // Her PPWR kaydı yalnızca tek güncel veri satırı taşır.
+  await sql`DELETE FROM ppwr_audit_log WHERE record_id=${recordId} AND revision_id IS NOT NULL AND revision_id<>${dataId}`;
+  await sql`DELETE FROM ppwr_revisions WHERE record_id=${recordId} AND id<>${dataId}`;
 
   try {
     await sql`
@@ -203,14 +203,14 @@ export async function saveRevisionAction(fd) {
         published_at=NOW(),
         approved_at=COALESCE(approved_at,NOW()),
         updated_at=NOW()
-      WHERE id=${revisionId} AND record_id=${recordId}
+      WHERE id=${dataId} AND record_id=${recordId}
     `;
   } catch (error) {
     throw error;
   }
 
   await sql`UPDATE ppwr_records SET updated_at=NOW() WHERE id=${recordId}`;
-  await audit(sql, recordId, revisionId, "record_saved", { published: true });
+  await audit(sql, recordId, dataId, "record_saved", { published: true });
   const rec = (await sql`SELECT code FROM ppwr_records WHERE id=${recordId} LIMIT 1`)[0];
   revalidatePath(`/yonetici/${recordId}`);
   revalidatePath("/yonetici");
