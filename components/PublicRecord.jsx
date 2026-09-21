@@ -98,9 +98,9 @@ export default function PublicRecord({ record, qrDataUrl }) {
         </tbody></table></div></section>
 
         <section className="card full"><h2>Belgeler / Documents</h2>
-          <div className="doc generated-doc"><div className="docicon">PDF</div><div><h3>PPWR Ambalaj Kimlik ve Teknik Bilgi / Packaging Identification & Technical Information</h3><p>Güncel kayıt verilerinden otomatik oluşturulur. / Automatically generated from current record data.</p></div><div className="actions"><a className="btn" href={`/belge/${encodeURIComponent(record.public_code)}/ambalaj-kimlik-teknik`} target="_blank" rel="noreferrer">Görüntüle / View</a><a className="btn primary" href={`/belge/${encodeURIComponent(record.public_code)}/ambalaj-kimlik-teknik?indir=1`}>PDF İndir / Download PDF</a></div></div>
           {record.declaration_url && <div className="doc"><div className="docicon">PDF</div><div><h3>AB Uygunluk Beyanı / EU Declaration of Conformity</h3></div><div className="actions"><a className="btn" href={`/belge/${encodeURIComponent(record.public_code)}/uygunluk-beyani`} target="_blank" rel="noreferrer">Görüntüle / View</a><a className="btn primary" href={`/belge/${encodeURIComponent(record.public_code)}/uygunluk-beyani?indir=1`}>PDF İndir / Download PDF</a></div></div>}
           {record.technical_url && <div className="doc"><div className="docicon">PDF</div><div><h3>{value(record.technical_title,"Ambalaj Teknik Dosya Özeti / Packaging Technical File Summary")}</h3><p>{value(record.technical_doc_no)}</p></div><div className="actions"><a className="btn" href={`/belge/${encodeURIComponent(record.public_code)}/teknik-dosya`} target="_blank" rel="noreferrer">Görüntüle / View</a><a className="btn primary" href={`/belge/${encodeURIComponent(record.public_code)}/teknik-dosya?indir=1`}>PDF İndir / Download PDF</a></div></div>}
+          {!record.declaration_url && !record.technical_url && <p className="muted">Yayınlanmış belge bulunmuyor. / No published documents available.</p>}
         </section>
 
         <section className="card full product-visual-card"><h2>Ürün Görseli / Product Visualization</h2>
