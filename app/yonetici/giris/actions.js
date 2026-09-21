@@ -1,8 +1,11 @@
 "use server";
+import { redirect } from "next/navigation";
+import { createAdminSession, verifyCredentials } from "@/lib/auth";
 
-import { login } from "@/lib/auth";
-
-export async function loginAction(prevState, formData) {
-  const result = await login(String(formData.get("username") || ""), String(formData.get("password") || ""));
-  return result.ok ? { ok: true } : { ok: false, error: "Kullanıcı adı veya parola hatalı." };
+export async function loginAction(formData) {
+  const username = String(formData.get("username") || "");
+  const password = String(formData.get("password") || "");
+  if (!verifyCredentials(username, password)) redirect("/yonetici/giris?hata=1");
+  await createAdminSession();
+  redirect("/yonetici");
 }
