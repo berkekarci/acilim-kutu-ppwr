@@ -18,8 +18,8 @@ export default function AdminSidebar({ records, logoutAction }) {
   return (
     <aside className="admin-side">
       <div className="admin-brand">
-        <div className="brandmark">AK</div>
-        <div><strong>PPWR Yönetim</strong><small>Açılım Kutu</small></div>
+        <div className="admin-logo-surface"><img className="admin-logo" src="https://acilimkutu.com/wp-content/uploads/2020/02/logo.webp" alt="Açılım Kutu" /></div>
+        <div className="admin-brand-copy"><strong>PPWR Yönetim</strong><small>Kayıt Sistemi</small></div>
       </div>
       <Link className="admin-primary admin-new" href="/yonetici/yeni">+ Yeni PPWR Kaydı</Link>
       <label className="side-search">
