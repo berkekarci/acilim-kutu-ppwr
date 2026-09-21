@@ -122,14 +122,14 @@ async function audit(sql, recordId, dataId, action, detail = {}) {
 export async function logoutAction() {
   const { destroyAdminSession } = await import("@/lib/auth");
   await destroyAdminSession();
-  redirect("/yonetici/giris");
+  redirect("/admin/giris");
 }
 
 export async function createRecordAction(fd) {
   await requireAdmin();
   await ensureSchema();
   const code = s(fd, "code");
-  if (!validCode(code)) redirect("/yonetici/yeni?hata=kod");
+  if (!validCode(code)) redirect("/admin/yeni?hata=kod");
 
   const sql = getSql();
   try {
@@ -148,10 +148,10 @@ export async function createRecordAction(fd) {
       RETURNING id
     `;
     await audit(sql, recordId, rev[0].id, "record_created", { code });
-    redirect(`/yonetici/${recordId}`);
+    redirect(`/admin/${recordId}`);
   } catch (error) {
     if (String(error?.message || error).toLowerCase().includes("unique")) {
-      redirect("/yonetici/yeni?hata=tekrar");
+      redirect("/admin/yeni?hata=tekrar");
     }
     throw error;
   }
@@ -235,10 +235,10 @@ export async function saveRecordAction(fd) {
   await sql`UPDATE ppwr_records SET updated_at=NOW() WHERE id=${recordId}`;
   await audit(sql, recordId, dataId, "record_saved", { published: true });
   const rec = (await sql`SELECT code FROM ppwr_records WHERE id=${recordId} LIMIT 1`)[0];
-  revalidatePath(`/yonetici/${recordId}`);
-  revalidatePath("/yonetici");
+  revalidatePath(`/admin/${recordId}`);
+  revalidatePath("/admin");
   if (rec?.code) revalidatePath(`/${rec.code}`);
-  redirect(`/yonetici/${recordId}?kaydedildi=1`);
+  redirect(`/admin/${recordId}?kaydedildi=1`);
 }
 
 export async function deleteRecordAction(fd) {
@@ -250,7 +250,7 @@ export async function deleteRecordAction(fd) {
   const confirmation = s(fd, "confirm_delete");
 
   if (confirmation !== "EVET") {
-    redirect(`/yonetici/${recordId}?hata=silme-onay`);
+    redirect(`/admin/${recordId}?hata=silme-onay`);
   }
 
   const record = (await sql`
@@ -258,13 +258,13 @@ export async function deleteRecordAction(fd) {
   `)[0];
 
   if (!record) {
-    redirect("/yonetici");
+    redirect("/admin");
   }
 
   await sql`DELETE FROM ppwr_audit_log WHERE record_id=${recordId}`;
   await sql`DELETE FROM ppwr_records WHERE id=${recordId}`;
 
-  revalidatePath("/yonetici");
+  revalidatePath("/admin");
   revalidatePath(`/${record.code}`);
-  redirect("/yonetici?silindi=1");
+  redirect("/admin?silindi=1");
 }
