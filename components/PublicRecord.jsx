@@ -58,8 +58,8 @@ export default function PublicRecord({ record, qrDataUrl }) {
         </tbody></table></div></section>
 
         <section className="card full"><h2>Belgeler / Documents</h2>
-          {record.declaration_url && <div className="doc"><div className="docicon">PDF</div><div><h3>AB Uygunluk Beyanı</h3></div><div className="actions"><a className="btn" href={record.declaration_url} target="_blank" rel="noreferrer">Görüntüle</a><a className="btn primary" href={record.declaration_download_url || record.declaration_url}>PDF İndir</a></div></div>}
-          {record.technical_url && <div className="doc"><div className="docicon">PDF</div><div><h3>{value(record.technical_title,"Ambalaj Teknik Dosya Özeti")}</h3><p>{value(record.technical_doc_no)}</p></div><div className="actions"><a className="btn" href={record.technical_url} target="_blank" rel="noreferrer">Görüntüle</a><a className="btn primary" href={record.technical_download_url || record.technical_url}>PDF İndir</a></div></div>}
+          {record.declaration_url && <div className="doc"><div className="docicon">PDF</div><div><h3>AB Uygunluk Beyanı</h3></div><div className="actions"><a className="btn" href={`/belge/${encodeURIComponent(record.public_code)}/uygunluk-beyani`} target="_blank" rel="noreferrer">Görüntüle</a><a className="btn primary" href={`/belge/${encodeURIComponent(record.public_code)}/uygunluk-beyani?indir=1`}>PDF İndir</a></div></div>}
+          {record.technical_url && <div className="doc"><div className="docicon">PDF</div><div><h3>{value(record.technical_title,"Ambalaj Teknik Dosya Özeti")}</h3><p>{value(record.technical_doc_no)}</p></div><div className="actions"><a className="btn" href={`/belge/${encodeURIComponent(record.public_code)}/teknik-dosya`} target="_blank" rel="noreferrer">Görüntüle</a><a className="btn primary" href={`/belge/${encodeURIComponent(record.public_code)}/teknik-dosya?indir=1`}>PDF İndir</a></div></div>}
           {!record.declaration_url && !record.technical_url && <p className="muted">Yayınlanmış belge bulunmuyor.</p>}
         </section>
 
