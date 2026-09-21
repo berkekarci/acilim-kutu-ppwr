@@ -102,7 +102,7 @@ export default function PublicRecord({ record, qrDataUrl }) {
               <div className="visual-stat"><span>Yükseklik / Height</span><strong>{heightMm ? `${heightMm} mm` : "—"}</strong></div>
               <div className="visual-stat"><span>Net Alan / Net Area</span><strong>{value(record.net_area)}</strong></div>
               <div className="visual-stat"><span>Renk Sayısı / Color Count</span><strong>{record.color_count || "—"}</strong></div>
-              <div className="visual-stat"><span>Toplam Ağırlık / Weight</span><strong>{value(record.total_weight)}</strong></div>
+              <div className="visual-stat"><span>Toplam Ağırlık / Total Weight</span><strong>{value(record.total_weight)}</strong></div>
             </div>
             <div className="visual-image-pane">
               <div className="package">{record.product_image_url ? <button type="button" className="product-image-button" onClick={() => setImageOpen(true)} aria-label="Ürün görselini büyüt / Enlarge product image"><img className="product-image" src={record.product_image_url} alt={record.product_name || "Ürün görseli / Product image"}/><span className="image-zoom-hint">Büyüt / Enlarge</span></button> : <div className="image-placeholder">Ürün/CAD görseli / Product/CAD image</div>}</div>
