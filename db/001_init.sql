@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS ppwr_revisions (
   production_facility TEXT,
   dimensions TEXT,
   net_area TEXT,
+  color_count TEXT,
   components JSONB NOT NULL DEFAULT '[]'::jsonb,
   materials JSONB NOT NULL DEFAULT '[]'::jsonb,
   identity_status TEXT DEFAULT 'READY',
