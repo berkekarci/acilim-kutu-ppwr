@@ -5,6 +5,16 @@ import { COMPANY } from "@/lib/company";
 
 function value(v, fallback = "—") { return v || fallback; }
 function array(v) { return Array.isArray(v) ? v : []; }
+function dimensionParts(value) {
+  const parts = String(value || "")
+    .toLowerCase()
+    .replace(/mm/g, "")
+    .replace(/,/g, ".")
+    .split(/[x×*]/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return parts.length === 3 ? parts : ["", "", ""];
+}
 function papMeta(value) {
   const code = String(value || "").replace(/\s+/g, "").toUpperCase();
   if (code === "PAP20") return { code: "PAP 20" };
@@ -16,6 +26,7 @@ export default function PublicRecord({ record, qrDataUrl }) {
   const [imageOpen, setImageOpen] = useState(false);
   const materials = array(record.materials);
   const pap = papMeta(record.usage_cycle);
+  const [widthMm, lengthMm, heightMm] = dimensionParts(record.dimensions);
   return (
     <div className="shell">
       <div className="topbar">
@@ -63,9 +74,21 @@ export default function PublicRecord({ record, qrDataUrl }) {
           {!record.declaration_url && !record.technical_url && <p className="muted">Yayınlanmış belge bulunmuyor.</p>}
         </section>
 
-        <section className="card full"><h2>Ürün Görseli / Product Visualization</h2><div className="visual"><div>
-          <dl className="info"><dt>Ölçüler</dt><dd>{value(record.dimensions)}</dd><dt>Net Alan</dt><dd>{value(record.net_area)}</dd></dl>
-        </div><div><div className="package">{record.product_image_url ? <button type="button" className="product-image-button" onClick={() => setImageOpen(true)} aria-label="Ürün görselini büyüt"><img className="product-image" src={record.product_image_url} alt={record.product_name || "Ürün görseli"}/><span className="image-zoom-hint">Büyüt</span></button> : <div className="image-placeholder">Ürün/CAD görseli</div>}</div></div></div></section>
+        <section className="card full product-visual-card"><h2>Ürün Görseli / Product Visualization</h2>
+          <div className="visual">
+            <div className="visual-specs">
+              <div className="visual-stat"><span>En / Width</span><strong>{widthMm ? `${widthMm} mm` : "—"}</strong></div>
+              <div className="visual-stat"><span>Boy / Length</span><strong>{lengthMm ? `${lengthMm} mm` : "—"}</strong></div>
+              <div className="visual-stat"><span>Yükseklik / Height</span><strong>{heightMm ? `${heightMm} mm` : "—"}</strong></div>
+              <div className="visual-stat"><span>Net Alan / Net Area</span><strong>{value(record.net_area)}</strong></div>
+              <div className="visual-stat"><span>Renk Sayısı / Colors</span><strong>{record.color_count ? `${record.color_count} renk` : "—"}</strong></div>
+              <div className="visual-stat"><span>Toplam Ağırlık / Weight</span><strong>{value(record.total_weight)}</strong></div>
+            </div>
+            <div className="visual-image-pane">
+              <div className="package">{record.product_image_url ? <button type="button" className="product-image-button" onClick={() => setImageOpen(true)} aria-label="Ürün görselini büyüt"><img className="product-image" src={record.product_image_url} alt={record.product_name || "Ürün görseli"}/><span className="image-zoom-hint">Büyüt</span></button> : <div className="image-placeholder">Ürün/CAD görseli</div>}</div>
+            </div>
+          </div>
+        </section>
 
       {imageOpen && record.product_image_url && (
         <div className="image-lightbox" role="dialog" aria-modal="true" aria-label="Büyütülmüş ürün görseli" onClick={() => setImageOpen(false)}>
