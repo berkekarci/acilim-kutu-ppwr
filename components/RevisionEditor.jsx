@@ -157,7 +157,6 @@ export default function RevisionEditor({ revision, recordId, action }) {
               <input name="package_class" value={DEFAULT_PACKAGE_CLASS} readOnly />
             </label>
             <Input label="Ambalaj Tipi" name="package_type" defaultValue={revision.package_type || DEFAULT_PACKAGE_TYPE} />
-            <Input label="Kullanım Amacı" name="usage_purpose" defaultValue={revision.usage_purpose} />
             <label className="pap-select-field">
               PAP Malzeme Kodu
               <select name="usage_cycle" value={papCode} onChange={(e) => setPapCode(e.target.value)}>
