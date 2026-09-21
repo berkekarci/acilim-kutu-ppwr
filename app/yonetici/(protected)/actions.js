@@ -176,6 +176,31 @@ export async function saveRecordAction(fd) {
   const calculatedWeight = calculatePackageWeight(netArea, packageType);
   const materials = calculatePackageMaterials(netArea, packageType);
 
+  const declarationRemove = s(fd, "declaration_remove") === "1";
+  const technicalRemove = s(fd, "technical_remove") === "1";
+  const productImageRemove = s(fd, "product_image_remove") === "1";
+
+  const incomingDeclarationUrl = nullable(fd, "declaration_url_input");
+  const declarationUrl = incomingDeclarationUrl || (declarationRemove ? null : current.declaration_url);
+  const declarationDownloadUrl = incomingDeclarationUrl
+    ? (nullable(fd, "declaration_download_url_input") || incomingDeclarationUrl)
+    : (declarationRemove ? null : current.declaration_download_url);
+  const declarationFilename = incomingDeclarationUrl
+    ? nullable(fd, "declaration_filename_input")
+    : (declarationRemove ? null : current.declaration_filename);
+
+  const incomingTechnicalUrl = nullable(fd, "technical_url_input");
+  const technicalUrl = incomingTechnicalUrl || (technicalRemove ? null : current.technical_url);
+  const technicalDownloadUrl = incomingTechnicalUrl
+    ? (nullable(fd, "technical_download_url_input") || incomingTechnicalUrl)
+    : (technicalRemove ? null : current.technical_download_url);
+  const technicalFilename = incomingTechnicalUrl
+    ? nullable(fd, "technical_filename_input")
+    : (technicalRemove ? null : current.technical_filename);
+
+  const incomingProductImageUrl = nullable(fd, "product_image_url_input");
+  const productImageUrl = incomingProductImageUrl || (productImageRemove ? null : current.product_image_url);
+
   // Her PPWR kaydı yalnızca tek güncel veri satırı taşır.
   await sql`DELETE FROM ppwr_audit_log WHERE record_id=${recordId} AND revision_id IS NOT NULL AND revision_id<>${dataId}`;
   await sql`DELETE FROM ppwr_revisions WHERE record_id=${recordId} AND id<>${dataId}`;
@@ -204,19 +229,19 @@ export async function saveRecordAction(fd) {
         components='[]'::jsonb,
         materials=CAST(${JSON.stringify(materials)} AS jsonb),
         identity_status='Otomatik',
-        technical_status=CASE WHEN technical_url IS NOT NULL THEN 'PDF eklendi' ELSE 'PDF yok' END,
-        declaration_status=CASE WHEN declaration_url IS NOT NULL THEN 'PDF eklendi' ELSE 'PDF yok' END,
+        technical_status=${technicalUrl ? "PDF eklendi" : "PDF yok"},
+        declaration_status=${declarationUrl ? "PDF eklendi" : "PDF yok"},
         declaration_title='',
         declaration_doc_no='',
-        declaration_url=COALESCE(${nullable(fd, "declaration_url_input")}, declaration_url),
-        declaration_download_url=COALESCE(${nullable(fd, "declaration_download_url_input")}, declaration_download_url),
-        declaration_filename=COALESCE(${nullable(fd, "declaration_filename_input")}, declaration_filename),
+        declaration_url=${declarationUrl},
+        declaration_download_url=${declarationDownloadUrl},
+        declaration_filename=${declarationFilename},
         technical_title=${s(fd, "technical_title")},
         technical_doc_no=${s(fd, "technical_doc_no")},
-        technical_url=COALESCE(${nullable(fd, "technical_url_input")}, technical_url),
-        technical_download_url=COALESCE(${nullable(fd, "technical_download_url_input")}, technical_download_url),
-        technical_filename=COALESCE(${nullable(fd, "technical_filename_input")}, technical_filename),
-        product_image_url=COALESCE(${nullable(fd, "product_image_url_input")}, product_image_url),
+        technical_url=${technicalUrl},
+        technical_download_url=${technicalDownloadUrl},
+        technical_filename=${technicalFilename},
+        product_image_url=${productImageUrl},
         product_image_source='',
         product_image_access='',
         prepared_by='',
