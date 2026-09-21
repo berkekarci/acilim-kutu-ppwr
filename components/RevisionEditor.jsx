@@ -2,10 +2,19 @@
 
 import { useState } from "react";
 import { upload } from "@vercel/blob/client";
+import { COMPANY } from "@/lib/company";
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
+
+function declarationIdFromPpwr(ppwrId) {
+  return String(ppwrId || "").trim().replace(/(^|[-_.])APB(?=([-_.]|$))/i, "$1DOC");
+}
+
+const DEFAULT_PACKAGE_CLASS = "Taşıma ambalajı";
+const DEFAULT_PACKAGE_TYPE = "Kağıt / Karton Ambalaj";
+const DEFAULT_PRODUCTION_FACILITY = `${COMPANY.name} — İTOB OSB, Menderes / İzmir / Türkiye`;
 
 function Input({ label, name, defaultValue, type = "text", className = "", placeholder = "" }) {
   return (
@@ -25,6 +34,7 @@ export default function RevisionEditor({ revision, recordId, action }) {
   const [materials, setMaterials] = useState(safeArray(revision.materials));
   const [uploadState, setUploadState] = useState("");
   const [uploadError, setUploadError] = useState("");
+  const [ppwrId, setPpwrId] = useState(revision.ppwr_id || "");
   const [submitting, setSubmitting] = useState(false);
   const locked = revision.status === "published" || revision.status === "archived";
 
@@ -117,15 +127,13 @@ export default function RevisionEditor({ revision, recordId, action }) {
           <div className="form-grid">
             <Input label="Revizyon" name="revision_label" defaultValue={revision.revision_label} placeholder="Rev.00" />
             <label>
-              Çalışma Durumu
-              <select name="status" defaultValue={revision.status}>
-                <option value="draft">Taslak</option>
-                <option value="review">İncelemede</option>
-                <option value="cancelled">İptal</option>
-              </select>
+              PPWR ID
+              <input name="ppwr_id" value={ppwrId} onChange={(e) => setPpwrId(e.target.value)} />
             </label>
-            <Input label="PPWR ID" name="ppwr_id" defaultValue={revision.ppwr_id} />
-            <Input label="Declaration ID" name="declaration_id" defaultValue={revision.declaration_id} />
+            <label>
+              Declaration ID
+              <input name="declaration_id" value={declarationIdFromPpwr(ppwrId)} readOnly />
+            </label>
             <Input label="Açılım İş Kodu" name="job_code" defaultValue={revision.job_code} />
             <Input label="Müşteri" name="customer" defaultValue={revision.customer} />
             <Input label="Müşteri Referansı" name="customer_ref" defaultValue={revision.customer_ref} />
@@ -137,14 +145,15 @@ export default function RevisionEditor({ revision, recordId, action }) {
 
         <section className="admin-panel">
           <h2>2. Ambalajın genel tanımı</h2>
+          <p className="admin-hint">Ambalaj sınıfı, ambalaj tipi ve üretim tesisi standart değerlerle otomatik gelir; gerektiğinde kayıt özelinde değiştirilebilir.</p>
           <div className="form-grid">
             <Input label="Ürün / Ambalaj Adı" name="product_name" defaultValue={revision.product_name} className="span2" />
-            <Input label="Ambalaj Sınıfı" name="package_class" defaultValue={revision.package_class} />
-            <Input label="Ambalaj Tipi" name="package_type" defaultValue={revision.package_type} />
+            <Input label="Ambalaj Sınıfı" name="package_class" defaultValue={revision.package_class || DEFAULT_PACKAGE_CLASS} />
+            <Input label="Ambalaj Tipi" name="package_type" defaultValue={revision.package_type || DEFAULT_PACKAGE_TYPE} />
             <Input label="Kullanım Amacı" name="usage_purpose" defaultValue={revision.usage_purpose} />
             <Input label="Tek / Çok Kullanımlık" name="usage_cycle" defaultValue={revision.usage_cycle} />
             <Input label="Toplam Ağırlık" name="total_weight" defaultValue={revision.total_weight} />
-            <Input label="Üretim Tesisi" name="production_facility" defaultValue={revision.production_facility} />
+            <Input label="Üretim Tesisi" name="production_facility" defaultValue={revision.production_facility || DEFAULT_PRODUCTION_FACILITY} />
             <Input label="Ölçüler" name="dimensions" defaultValue={revision.dimensions} />
             <Input label="Net Alan" name="net_area" defaultValue={revision.net_area} />
           </div>
