@@ -1,22 +1,24 @@
-import Link from "next/link";
-import { getAdminStats } from "@/lib/db";
+import { listRecords } from "@/lib/db";
 
-export const dynamic = "force-dynamic";
+export default async function AdminHome() {
+  const rows = await listRecords();
+  const published = rows.filter((row) => row.has_published).length;
+  const working = rows.filter((row) => row.status === "draft" || row.status === "review").length;
 
-export default async function AdminHomePage() {
-  const stats = await getAdminStats();
   return (
     <div className="admin-page">
       <div className="admin-header">
-        <div><div className="admin-kicker">AÇILIM KUTU</div><h1>PPWR Yönetim Paneli</h1><p>Kayıtlar, revizyonlar ve yayın durumu.</p></div>
-        <Link className="admin-primary" href="/yonetici/yeni">+ Yeni PPWR Kaydı</Link>
+        <div><h1>PPWR Yönetim Paneli</h1><p>Tüm kayıtlar yalnızca bu yönetim ekranında listelenir. Kamu tarafında toplu liste oluşturulmaz.</p></div>
       </div>
       <div className="admin-stats">
-        <div><span>Toplam kayıt</span><strong>{stats.total}</strong></div>
-        <div><span>Yayında</span><strong>{stats.published}</strong></div>
-        <div><span>Taslak / inceleme</span><strong>{stats.nonPublished}</strong></div>
+        <div><span>Toplam kayıt</span><strong>{rows.length}</strong></div>
+        <div><span>Kamuya yayında</span><strong>{published}</strong></div>
+        <div><span>Aktif taslak / inceleme</span><strong>{working}</strong></div>
       </div>
-      <div className="admin-panel"><h2>Kayıt seçin</h2><p>Sol menüden bir PPWR kaydı seçerek bilgilerini ve revizyonlarını yönetin.</p></div>
+      <div className="admin-panel">
+        <h2>Çalışma mantığı</h2>
+        <p>Soldan bir PPWR kaydı seçin veya yeni kayıt oluşturun. Her kayıt altında birden fazla revizyon tutulur. Kamu URL'si daima o kodun son yayınlanmış revizyonunu açar. Yeni bir revizyon üzerinde çalışmak mevcut yayını kesmez.</p>
+      </div>
     </div>
   );
 }
