@@ -8,33 +8,24 @@ Bu proje, `ppwr.acilimkutu.com` için bağımsız Vercel/Next.js uygulamasıdır
 - Yönetici paneli: `https://ppwr.acilimkutu.com/yonetici`
 - Kamu tarafında toplu kayıt listesi **yoktur**.
 - Kod uzunluğu sabit değildir. Harf, sayı ve tire kullanılabilir. `/ ? # %` tek segment URL yapısını bozduğu için kabul edilmez.
-- Her PPWR kaydının birden çok revizyonu olabilir.
-- Kamu sayfası yalnızca `published` durumundaki son revizyonu gösterir.
-- Yeni revizyon yayınlandığında eski yayın `archived` olur; veritabanından silinmez.
-- PDF ve görseller Vercel Blob'da, kayıt/revizyon verileri Neon Postgres'te tutulur.
+- Her PPWR kodu tek bir güncel kayıt taşır.
+- Yönetici panelindeki değişiklikler `Kaydet ve Yayınla` ile doğrudan kamu sayfasına yansır.
+- Ayrı taslak, onay veya revizyon iş akışı yoktur.
+- PDF ve görseller Vercel Blob'da, PPWR kayıt verileri Neon Postgres'te tutulur.
 - Yönetici girişi ChatGPT/OpenAI hesabından bağımsızdır.
 
 ## Vercel kurulumu
 
-1. Ayrı bir GitHub deposu oluşturun.
-2. Bu klasörün içeriğini o depoya yükleyin.
-3. Vercel'de yeni Project oluşturup bu depoyu bağlayın.
-4. Vercel Marketplace'ten **Neon Postgres** ekleyin. `DATABASE_URL` otomatik tanımlanmalıdır.
-5. Vercel Storage'dan **Blob** oluşturun. `BLOB_READ_WRITE_TOKEN` otomatik tanımlanmalıdır.
-6. Project → Settings → Environment Variables bölümüne ekleyin:
-   - `ADMIN_USERNAME`
-   - `ADMIN_PASSWORD`
-   - `SESSION_SECRET` (en az 32+ rastgele karakter)
-   - `NEXT_PUBLIC_APP_URL=https://ppwr.acilimkutu.com`
-7. Neon SQL Editor'da `db/001_init.sql` dosyasını bir kez çalıştırın.
-8. Vercel Project → Domains bölümüne `ppwr.acilimkutu.com` ekleyin.
-9. DNS tarafında Vercel'in gösterdiği CNAME/A kaydını sadece `ppwr` subdomainine uygulayın. Ana `acilimkutu.com` DNS kaydını değiştirmeyin.
-10. Deploy tamamlanınca `/yonetici` üzerinden ilk PPWR kaydını oluşturun.
+1. GitHub deposunu Vercel projesine bağlayın.
+2. Neon Postgres bağlantısını tanımlayın.
+3. Vercel Blob depolamasını bağlayın.
+4. Environment Variables bölümünde `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `SESSION_SECRET` ve `NEXT_PUBLIC_APP_URL=https://ppwr.acilimkutu.com` tanımlı olmalıdır.
+5. `ppwr.acilimkutu.com` alan adı yalnızca bu Vercel projesine yönlendirilmelidir.
 
-## Yayın güvenliği
+## Yayın mantığı
 
-Bir taslak veya inceleme revizyonu kamu tarafında görünmez. “Bu Revizyonu Yayınla” işlemi yapılınca aynı kaydın önceki yayınlanmış revizyonu atomik SQL işlemiyle `archived` durumuna alınır ve yeni revizyon `published` olur.
+Yeni PPWR kaydı oluşturulduğunda kamu sayfası oluşur. Yönetici ekranındaki bilgiler güncellendiğinde `Kaydet ve Yayınla` işlemi mevcut kaydı doğrudan günceller. Kamu URL'si her zaman tek güncel kayıt verisini gösterir.
 
 ## Yönetici veri alanları
 
-Kayıt kodu; PPWR ID ve Declaration ID; Açılım iş kodu; müşteri; müşteri referansı; sistem kodu; ithalatçı; ürün/ambalaj adı; ambalaj sınıfı/tipi; kullanım amacı; tek/çok kullanımlık; toplam ağırlık; üretim tesisi; ölçüler; net alan; komponentler; malzeme bileşimi; PPWR durumları; iki PDF; ürün/CAD görseli; hazırlayan/kontrol eden/onaylayan ve inceleme tarihi.
+PPWR ID ve otomatik Declaration ID; Açılım iş kodu; müşteri; sistem kodu; ürün/ambalaj adı; ambalaj sınıfı ve tipi; geri dönüşüm sınıfı; otomatik toplam ağırlık; üretim tesisi; en × boy × yükseklik; net alan; ambalaj komponentleri; otomatik/manuel malzeme bileşimi; isteğe bağlı PDF'ler; ürün/CAD görseli ve inceleme tarihi.
