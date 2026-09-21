@@ -382,11 +382,7 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
 
         <section className="admin-panel">
           <h2>4. Belge ve görsel dosyaları</h2>
-          <p className="admin-hint">PPWR Ambalaj Kimlik ve Teknik Bilgi PDF'i kaydedilmiş güncel bilgilerden otomatik oluşturulur. Diğer PDF ve görseller tarayıcıdan yüklenir; dosya başına üst sınır 50 MB'dır.</p>
-          <div className="generated-pdf-card">
-            <div><strong>PPWR Ambalaj Kimlik ve Teknik Bilgi Belgesi</strong><span>Kaydet ve Yayınla işleminden sonra PDF güncel kayıt verileriyle otomatik yenilenir.</span></div>
-            <div className="generated-pdf-actions"><a className="admin-secondary" href={`/belge/${encodeURIComponent(publicCode)}/ambalaj-kimlik-teknik`} target="_blank" rel="noreferrer">PDF Önizle</a><a className="admin-primary" href={`/belge/${encodeURIComponent(publicCode)}/ambalaj-kimlik-teknik?indir=1`}>PDF İndir</a></div>
-          </div>
+          <p className="admin-hint">Dosyalar tarayıcıdan doğrudan Vercel Blob'a yüklenir. PDF ve görseller için dosya başına üst sınır 50 MB'dır.</p>
           <div className="form-grid">
             <label>AB Uygunluk Beyanı PDF<input ref={declarationFileRef} type="file" name="declaration_file" accept="application/pdf" onChange={(e) => {
               const file = e.target.files?.[0];
