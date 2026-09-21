@@ -17,7 +17,6 @@ export default function PublicRecord({ record, qrDataUrl }) {
     <div className="shell">
       <div className="topbar">
         <div className="brand corporate-brand"><div className="brand-logo-surface"><img className="brand-logo" src="https://acilimkutu.com/wp-content/uploads/2020/02/logo.webp" alt="Açılım Kutu" /></div><div className="brandtext brand-system"><strong>PPWR KAYIT SİSTEMİ</strong><span>Packaging Compliance Portal</span></div></div>
-        <div className="lang"><button className="active">TR</button><button disabled>EN</button></div>
       </div>
 
       <section className="hero">
@@ -43,7 +42,7 @@ export default function PublicRecord({ record, qrDataUrl }) {
         </dl></section>
 
         <section className="card"><h2>Ambalaj Tanımı / Packaging Identification</h2><dl className="info">
-          <dt>Açılım İş Kodu</dt><dd>{value(record.job_code)}</dd><dt>Sistem Kodu</dt><dd>{value(record.system_code)}</dd><dt>Ürün Tanımı</dt><dd>{value(record.product_name)}</dd><dt>Ambalaj Sınıfı</dt><dd>{value(record.package_class, "Yedek Parça Kutusu")}</dd><dt>Ambalaj Tipi</dt><dd>{value(record.package_type)}</dd><dt>Kullanım Amacı</dt><dd>{value(record.usage_purpose)}</dd><dt>Malzeme İşaretleme</dt><dd>{pap ? <span className="pap-public"><span className="pap-logo">♻</span><strong>{pap.code}</strong></span> : "—"}</dd><dt>Toplam Ağırlık</dt><dd>{value(record.total_weight)}</dd><dt>Üretim Tesisi</dt><dd>{value(record.production_facility)}</dd>
+          <dt>Açılım İş Kodu</dt><dd>{value(record.job_code)}</dd><dt>Sistem Kodu</dt><dd>{value(record.system_code)}</dd><dt>Ürün Tanımı</dt><dd>{value(record.product_name)}</dd><dt>Ambalaj Sınıfı</dt><dd>{value(record.package_class, "Yedek Parça Kutusu")}</dd><dt>Ambalaj Tipi</dt><dd>{value(record.package_type)}</dd><dt>Malzeme İşaretleme</dt><dd>{pap ? <span className="pap-public"><span className="pap-logo">♻</span><strong>{pap.code}</strong></span> : "—"}</dd><dt>Toplam Ağırlık</dt><dd>{value(record.total_weight)}</dd><dt>Üretim Tesisi</dt><dd>{value(record.production_facility)}</dd>
         </dl></section>
 
         <section className="card full"><h2>Kayıt Özeti / Record Summary</h2><div className="sub">Belge durumu sistem tarafından otomatik gösterilir.</div><div className="statusgrid">
