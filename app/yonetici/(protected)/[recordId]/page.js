@@ -40,7 +40,7 @@ export default async function RecordPage({ params, searchParams }) {
 
       {sp?.kaydedildi && <div className="successbox">Revizyon kaydedildi.</div>}
       {sp?.yayinlandi && <div className="successbox">Revizyon yayınlandı. Bu kodun kamu URL'si artık bu revizyonu gösteriyor; önceki yayın arşivlendi.</div>}
-      {sp?.hata === "yayin-zorunlu" && <div className="errorbox">Yayın için PPWR ID, ürün adı, Onaylayan, AB Uygunluk Beyanı PDF ve Teknik Dosya PDF zorunludur.</div>}
+      {sp?.hata === "yayin-zorunlu" && <div className="errorbox">Yayın için yalnızca PPWR ID, ürün adı ve Onaylayan alanları zorunludur. PDF belgeleri isteğe bağlıdır.</div>}
       {sp?.hata === "revizyon" && <div className="errorbox">Revizyon etiketi boş/geçersiz. / ? # % karakterleri kullanılamaz.</div>}
       {sp?.hata === "revizyon-tekrar" && <div className="errorbox">Bu revizyon etiketi bu kayıt altında zaten kullanılıyor.</div>}
 
