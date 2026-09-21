@@ -47,7 +47,7 @@ export default async function RecordPage({ params, searchParams }) {
       <div className="revision-tabs">
         {revisions.map((revision) => (
           <Link key={revision.id} href={`/yonetici/${recordId}?rev=${revision.id}`} className={String(revision.id) === String(selected.id) ? "active" : ""}>
-            {revision.revision_label}<small>{revision.status}</small>
+            {revision.revision_label}<small>{revision.status === "published" ? "yayında" : revision.status === "archived" ? "arşiv" : "çalışma revizyonu"}</small>
           </Link>
         ))}
       </div>
