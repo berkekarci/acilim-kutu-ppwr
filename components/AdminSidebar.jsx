@@ -3,25 +3,41 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-export default function AdminSidebar({ records }) {
-  const [q, setQ] = useState("");
+export default function AdminSidebar({ records, logoutAction }) {
+  const [query, setQuery] = useState("");
   const filtered = useMemo(() => {
-    const n = q.trim().toLowerCase();
-    if (!n) return records;
-    return records.filter((r) => [r.public_code, r.product_name, r.customer, r.ppwr_id].some((v) => String(v || "").toLowerCase().includes(n)));
-  }, [q, records]);
+    const q = query.trim().toLocaleLowerCase("tr-TR");
+    if (!q) return records;
+    return records.filter((record) =>
+      [record.code, record.product_name, record.customer, record.revision_label, record.status]
+        .filter(Boolean)
+        .some((value) => String(value).toLocaleLowerCase("tr-TR").includes(q))
+    );
+  }, [query, records]);
 
   return (
     <aside className="admin-side">
-      <div className="admin-brand"><div className="brandmark">AK</div><div><strong>Açılım Kutu</strong><small>PPWR Yönetimi</small></div></div>
-      <Link className="admin-primary admin-new" href="/yonetici/yeni">+ Yeni kayıt</Link>
-      <label className="side-search">Kayıtlarda ara<input value={q} onChange={(e)=>setQ(e.target.value)} placeholder="Kod, müşteri, ürün..." /></label>
-      <div className="admin-record-count">{filtered.length} kayıt</div>
-      <div className="admin-records">
-        {filtered.map((r) => <Link key={r.id} className="admin-record" href={`/yonetici/${r.id}`}><div className="record-line"><strong>{r.public_code}</strong><i className={`status-dot ${r.latest_status || ""}`} /></div><span>{r.product_name || "Ürün tanımı yok"}</span><small>{r.customer || "Müşteri belirtilmedi"}</small></Link>)}
-        {!filtered.length && <div className="side-empty">Kayıt bulunamadı.</div>}
+      <div className="admin-brand">
+        <div className="brandmark">AK</div>
+        <div><strong>PPWR Yönetim</strong><small>Açılım Kutu</small></div>
       </div>
-      <form action="/api/auth/logout" method="post"><button className="admin-logout" type="submit">Çıkış yap</button></form>
+      <Link className="admin-primary admin-new" href="/yonetici/yeni">+ Yeni PPWR Kaydı</Link>
+      <label className="side-search">
+        <span>Kayıtlarda ara</span>
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Kod, ürün, müşteri…" />
+      </label>
+      <div className="admin-record-count">{filtered.length} / {records.length} kayıt</div>
+      <div className="admin-records">
+        {filtered.map((record) => (
+          <Link href={`/yonetici/${record.id}`} key={record.id} className="admin-record">
+            <div className="record-line"><strong>{record.code}</strong><span className={`status-dot ${record.status || "draft"}`} /></div>
+            <span>{record.product_name || "Ürün adı girilmedi"}</span>
+            <small>{record.revision_label || "—"} · {record.status || "—"}{record.has_published ? " · kamu yayında" : ""}</small>
+          </Link>
+        ))}
+        {!filtered.length && <p className="side-empty">Eşleşen kayıt yok.</p>}
+      </div>
+      <form action={logoutAction}><button className="admin-logout">Çıkış Yap</button></form>
     </aside>
   );
 }
