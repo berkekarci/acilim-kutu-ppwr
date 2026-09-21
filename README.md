@@ -11,7 +11,8 @@ Bu proje, `ppwr.acilimkutu.com` için bağımsız Vercel/Next.js uygulamasıdır
 - Her PPWR kodu tek bir güncel kayıt taşır.
 - Yönetici panelindeki değişiklikler `Kaydet ve Yayınla` ile doğrudan kamu sayfasına yansır.
 - Ayrı taslak, onay veya revizyon iş akışı yoktur.
-- PDF ve görseller Vercel Blob'da, PPWR kayıt verileri Neon Postgres'te tutulur.
+- Manuel PDF ve görseller Vercel Blob'da, PPWR kayıt verileri Neon Postgres'te tutulur.
+- PPWR Ambalaj Kimlik ve Teknik Bilgi PDF'i güncel kayıt verilerinden otomatik üretilir; ayrı dosya yüklemek gerekmez.
 - Yönetici girişi ChatGPT/OpenAI hesabından bağımsızdır.
 
 ## Vercel kurulumu
