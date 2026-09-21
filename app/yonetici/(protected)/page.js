@@ -15,7 +15,7 @@ export default async function AdminHome() {
       </div>
       <div className="admin-panel">
         <h2>Çalışma mantığı</h2>
-        <p>Soldan bir PPWR kaydı seçin veya yeni kayıt oluşturun. Yönetici ekranında yaptığınız değişiklikler “Kaydet ve Yayınla” ile doğrudan ilgili kamu sayfasına yansır. Ayrı taslak, onay veya revizyon adımı yoktur.</p>
+        <p>Soldan bir PPWR kaydı seçin veya yeni kayıt oluşturun. Yönetici ekranında yaptığınız değişiklikler “Kaydet ve Yayınla” ile doğrudan ilgili kamu sayfasına yansır. Ayrı taslak veya onay adımı yoktur; her kayıt tek güncel veri olarak çalışır.</p>
       </div>
     </div>
   );
