@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getRecordById, getRevisions } from "@/lib/db";
 import RevisionEditor from "@/components/RevisionEditor";
-import { newRevisionAction, publishRevisionAction, saveRevisionAction } from "../actions";
+import DeleteRecordButton from "@/components/DeleteRecordButton";
+import { deleteRecordAction, newRevisionAction, publishRevisionAction, saveRevisionAction } from "../actions";
 
 export default async function RecordPage({ params, searchParams }) {
   const { recordId } = await params;
@@ -19,7 +20,10 @@ export default async function RecordPage({ params, searchParams }) {
     <div className="admin-page">
       <div className="admin-header">
         <div><div className="admin-kicker">KAMU KODU</div><h1>{record.code}</h1><p>{publicUrl}</p></div>
-        <a className="admin-secondary" href={publicUrl} target="_blank" rel="noreferrer">Kamu Sayfasını Aç</a>
+        <div className="admin-header-actions">
+          <a className="admin-secondary" href={publicUrl} target="_blank" rel="noreferrer">Kamu Sayfasını Aç</a>
+          <DeleteRecordButton recordId={recordId} code={record.code} action={deleteRecordAction} />
+        </div>
       </div>
 
       {sp?.kaydedildi && <div className="successbox">Revizyon kaydedildi.</div>}
@@ -27,6 +31,7 @@ export default async function RecordPage({ params, searchParams }) {
       {sp?.hata === "yayin-zorunlu" && <div className="errorbox">Yayın için PPWR ID ve ürün adı zorunludur. PDF belgeleri isteğe bağlıdır.</div>}
       {sp?.hata === "revizyon" && <div className="errorbox">Revizyon etiketi boş/geçersiz. / ? # % karakterleri kullanılamaz.</div>}
       {sp?.hata === "revizyon-tekrar" && <div className="errorbox">Bu revizyon etiketi bu kayıt altında zaten kullanılıyor.</div>}
+      {sp?.hata === "silme-onay" && <div className="errorbox">PPWR kaydı silinemedi: silme onayı alınamadı.</div>}
 
       <div className="revision-tabs">
         {revisions.map((revision) => (
