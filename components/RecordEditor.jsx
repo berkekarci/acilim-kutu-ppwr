@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { upload } from "@vercel/blob/client";
 import { COMPANY } from "@/lib/company";
 
@@ -173,6 +173,14 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
     technical: false,
     productImage: false,
   });
+  const [selectedFiles, setSelectedFiles] = useState({
+    declaration: "",
+    technical: "",
+    productImage: "",
+  });
+  const declarationFileRef = useRef(null);
+  const technicalFileRef = useRef(null);
+  const productImageFileRef = useRef(null);
   const calculatedWeight = calculatePackageWeight(netArea, packageType);
   const visibleMaterials = calculatePackageMaterials(netArea, packageType);
   const consistencyCheck = getConsistencyCheck(dimensions, netArea, packageType, papCode);
@@ -371,9 +379,21 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
           <h2>4. Belge ve görsel dosyaları</h2>
           <p className="admin-hint">Dosyalar tarayıcıdan doğrudan Vercel Blob'a yüklenir. PDF ve görseller için dosya başına üst sınır 50 MB'dır.</p>
           <div className="form-grid">
-            <label>AB Uygunluk Beyanı PDF<input type="file" name="declaration_file" accept="application/pdf" onChange={(e) => e.target.files?.length && setRemovedFiles((v) => ({ ...v, declaration: false }))} /></label>
+            <label>AB Uygunluk Beyanı PDF<input ref={declarationFileRef} type="file" name="declaration_file" accept="application/pdf" onChange={(e) => {
+              const file = e.target.files?.[0];
+              setSelectedFiles((v) => ({ ...v, declaration: file?.name || "" }));
+              if (file) setRemovedFiles((v) => ({ ...v, declaration: false }));
+            }} /></label>
             <div className="existing-file">
-              {recordData.declaration_url && !removedFiles.declaration ? (
+              {selectedFiles.declaration ? (
+                <div className="existing-file-row selected-file-row">
+                  <span>{selectedFiles.declaration}</span>
+                  <button type="button" className="file-remove-btn" title="Seçilen dosyayı kaldır" aria-label="Seçilen uygunluk beyanı PDF'ini kaldır" onClick={() => {
+                    if (declarationFileRef.current) declarationFileRef.current.value = "";
+                    setSelectedFiles((v) => ({ ...v, declaration: "" }));
+                  }}>×</button>
+                </div>
+              ) : recordData.declaration_url && !removedFiles.declaration ? (
                 <div className="existing-file-row">
                   <a href={`/belge/${encodeURIComponent(publicCode)}/uygunluk-beyani`} target="_blank" rel="noreferrer">{recordData.declaration_filename || "Mevcut PDF'yi aç"}</a>
                   <button type="button" className="file-remove-btn" title="Belgeyi kaldır" aria-label="AB Uygunluk Beyanı PDF'ini kaldır" onClick={() => setRemovedFiles((v) => ({ ...v, declaration: true }))}>×</button>
@@ -383,9 +403,21 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
 
             <Input label="Teknik Dosya Başlığı" name="technical_title" defaultValue={recordData.technical_title} />
             <Input label="Teknik Dosya No" name="technical_doc_no" defaultValue={recordData.technical_doc_no} />
-            <label>Teknik Dosya PDF<input type="file" name="technical_file" accept="application/pdf" onChange={(e) => e.target.files?.length && setRemovedFiles((v) => ({ ...v, technical: false }))} /></label>
+            <label>Teknik Dosya PDF<input ref={technicalFileRef} type="file" name="technical_file" accept="application/pdf" onChange={(e) => {
+              const file = e.target.files?.[0];
+              setSelectedFiles((v) => ({ ...v, technical: file?.name || "" }));
+              if (file) setRemovedFiles((v) => ({ ...v, technical: false }));
+            }} /></label>
             <div className="existing-file">
-              {recordData.technical_url && !removedFiles.technical ? (
+              {selectedFiles.technical ? (
+                <div className="existing-file-row selected-file-row">
+                  <span>{selectedFiles.technical}</span>
+                  <button type="button" className="file-remove-btn" title="Seçilen dosyayı kaldır" aria-label="Seçilen teknik PDF'i kaldır" onClick={() => {
+                    if (technicalFileRef.current) technicalFileRef.current.value = "";
+                    setSelectedFiles((v) => ({ ...v, technical: "" }));
+                  }}>×</button>
+                </div>
+              ) : recordData.technical_url && !removedFiles.technical ? (
                 <div className="existing-file-row">
                   <a href={`/belge/${encodeURIComponent(publicCode)}/teknik-dosya`} target="_blank" rel="noreferrer">{recordData.technical_filename || "Mevcut PDF'yi aç"}</a>
                   <button type="button" className="file-remove-btn" title="Belgeyi kaldır" aria-label="Teknik Dosya PDF'ini kaldır" onClick={() => setRemovedFiles((v) => ({ ...v, technical: true }))}>×</button>
@@ -393,9 +425,21 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
               ) : removedFiles.technical ? <span className="file-remove-pending">Kaldırılacak. İsterseniz yukarıdan yeni PDF seçebilirsiniz.</span> : "Dosya yüklenmedi"}
             </div>
 
-            <label>Ürün / CAD Görseli<input type="file" name="product_image" accept="image/*" onChange={(e) => e.target.files?.length && setRemovedFiles((v) => ({ ...v, productImage: false }))} /></label>
+            <label>Ürün / CAD Görseli<input ref={productImageFileRef} type="file" name="product_image" accept="image/*" onChange={(e) => {
+              const file = e.target.files?.[0];
+              setSelectedFiles((v) => ({ ...v, productImage: file?.name || "" }));
+              if (file) setRemovedFiles((v) => ({ ...v, productImage: false }));
+            }} /></label>
             <div className="existing-file">
-              {recordData.product_image_url && !removedFiles.productImage ? (
+              {selectedFiles.productImage ? (
+                <div className="existing-file-row selected-file-row">
+                  <span>{selectedFiles.productImage}</span>
+                  <button type="button" className="file-remove-btn" title="Seçilen görseli kaldır" aria-label="Seçilen ürün görselini kaldır" onClick={() => {
+                    if (productImageFileRef.current) productImageFileRef.current.value = "";
+                    setSelectedFiles((v) => ({ ...v, productImage: "" }));
+                  }}>×</button>
+                </div>
+              ) : recordData.product_image_url && !removedFiles.productImage ? (
                 <div className="existing-file-row">
                   <a href={recordData.product_image_url} target="_blank" rel="noreferrer">Mevcut görseli aç</a>
                   <button type="button" className="file-remove-btn" title="Görseli kaldır" aria-label="Ürün görselini kaldır" onClick={() => setRemovedFiles((v) => ({ ...v, productImage: true }))}>×</button>
