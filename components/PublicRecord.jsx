@@ -14,7 +14,6 @@ function papMeta(value) {
 
 export default function PublicRecord({ record, qrDataUrl }) {
   const [imageOpen, setImageOpen] = useState(false);
-  const components = array(record.components);
   const materials = array(record.materials);
   const pap = papMeta(record.usage_cycle);
   return (
@@ -53,12 +52,7 @@ export default function PublicRecord({ record, qrDataUrl }) {
           <div className="check"><b>AB Uygunluk Beyanı</b><div className={record.declaration_url ? "flag ok" : "flag"}>● {record.declaration_url ? "PDF eklendi" : "PDF yok"}</div></div>
         </div></section>
 
-        <section className="card"><h2>Ambalaj Parçaları / Packaging Components</h2>
-          {components.length ? components.map((c, i) => <div className="component" key={i}><div className="num">{String(i+1).padStart(2,"0")}</div><div><h3>{value(c.name)}</h3><p>{[c.material,c.details].filter(Boolean).join(" · ")}</p></div><div className="weight">{value(c.weight)}</div></div>) : <p className="muted">Komponent bilgisi girilmemiş.</p>}
-          <div className="component-total"><strong>Toplam / Total</strong><strong>{value(record.total_weight)}</strong></div>
-        </section>
-
-        <section className="card"><h2>Malzeme Bileşimi / Material Composition</h2><div className="table-scroll"><table className="materials"><thead><tr><th>Malzeme</th><th>Ağırlık</th><th>Oran</th></tr></thead><tbody>
+        <section className="card full"><h2>Malzeme Bileşimi / Material Composition</h2><div className="table-scroll"><table className="materials"><thead><tr><th>Malzeme</th><th>Ağırlık</th><th>Oran</th></tr></thead><tbody>
           {materials.length ? materials.map((m,i)=><tr key={i}><td>{value(m.name)}</td><td>{value(m.weight)}</td><td>{value(m.ratio)}</td></tr>) : <tr><td colSpan="3">Malzeme bileşimi girilmemiş.</td></tr>}
           <tr><td><strong>Total</strong></td><td><strong>{value(record.total_weight)}</strong></td><td><strong>100%</strong></td></tr>
         </tbody></table></div></section>
