@@ -38,8 +38,6 @@ export default function PublicRecord({ record, qrDataUrl }) {
         <div className="qrbox"><div className="qrinner"><img src={qrDataUrl} alt={`${record.public_code} QR`} /><b>{record.public_code}</b><small>Scan for digital record</small></div></div>
       </section>
 
-      <div className="notice"><strong>GÜNCEL KAYIT:</strong> Bu sayfa yönetim panelinde kaydedilen en güncel PPWR bilgilerini gösterir. Yönetici panelindeki değişiklikler kaydedildiğinde doğrudan bu sayfaya yansır.</div>
-
       <div className="grid">
         <section className="card"><h2>Firma Bilgileri / Company Information</h2><dl className="info">
           <dt>Ambalaj Üreticisi</dt><dd>{COMPANY.name}</dd><dt>E-posta</dt><dd>{COMPANY.email}</dd><dt>Telefon</dt><dd>{COMPANY.phone}</dd><dt>Müşteri</dt><dd>{value(record.customer)}</dd>
