@@ -1,5 +1,4 @@
 import { getPublicRecordByCode } from "@/lib/db";
-import { createPackagingTechnicalPdf } from "@/lib/autoTechnicalPdf";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,36 +29,13 @@ function filenameFor(record, type) {
 export async function GET(request, { params }) {
   const { kod, tur } = await params;
 
-  if (!["uygunluk-beyani", "teknik-dosya", "ambalaj-kimlik-teknik"].includes(tur)) {
+  if (!["uygunluk-beyani", "teknik-dosya"].includes(tur)) {
     return new Response("Belge bulunamadı.", { status: 404 });
   }
 
   const record = await getPublicRecordByCode(decodeURIComponent(kod));
   if (!record) {
     return new Response("Kayıt bulunamadı.", { status: 404 });
-  }
-
-  if (tur === "ambalaj-kimlik-teknik") {
-    try {
-      const base = (process.env.NEXT_PUBLIC_APP_URL || "https://ppwr.acilimkutu.com").replace(/\/$/, "");
-      const publicUrl = `${base}/${encodeURIComponent(record.public_code)}`;
-      const pdf = await createPackagingTechnicalPdf(record, publicUrl);
-      const download = new URL(request.url).searchParams.get("indir") === "1";
-      const filename = `AK_PPWR_Ambalaj_Kimlik_Teknik_Bilgi_${record.public_code}.pdf`;
-      const encodedFilename = encodeURIComponent(filename);
-      return new Response(pdf, {
-        status: 200,
-        headers: {
-          "Content-Type": "application/pdf",
-          "Content-Disposition": `${download ? "attachment" : "inline"}; filename*=UTF-8''${encodedFilename}`,
-          "Cache-Control": "private, no-store, max-age=0",
-          "X-Content-Type-Options": "nosniff",
-        },
-      });
-    } catch (error) {
-      console.error("Otomatik PPWR PDF oluşturulamadı:", error);
-      return new Response("PDF oluşturulamadı.", { status: 500 });
-    }
   }
 
   const sourceUrl =
