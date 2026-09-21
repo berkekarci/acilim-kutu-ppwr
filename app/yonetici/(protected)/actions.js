@@ -41,6 +41,30 @@ const DEFAULT_PACKAGE_CLASS = "Yedek Parça Kutusu";
 const DEFAULT_PACKAGE_TYPE = "Kağıt / Karton Ambalaj";
 const DEFAULT_PRODUCTION_FACILITY = `${COMPANY.name} — İTOB OSB, Menderes / İzmir / Türkiye`;
 
+const E_FLUTE_TAKE_UP = 1.25;
+const LINER_GSM = 80;
+const FLUTING_GSM = 80;
+const KROME_GSM = 210;
+const GLUE_GSM = 12;
+const EFFECTIVE_GSM = LINER_GSM + (FLUTING_GSM * E_FLUTE_TAKE_UP) + KROME_GSM + GLUE_GSM;
+
+function parseAreaM2(value) {
+  const normalized = String(value || "")
+    .toLowerCase()
+    .replace("m²", "")
+    .replace("m2", "")
+    .replace(",", ".")
+    .trim();
+  const area = Number.parseFloat(normalized);
+  return Number.isFinite(area) && area > 0 ? area : 0;
+}
+
+function calculateEFluteWeight(areaValue) {
+  const area = parseAreaM2(areaValue);
+  if (!area) return "";
+  return `${(area * EFFECTIVE_GSM).toFixed(2)} g`;
+}
+
 async function audit(sql, recordId, revisionId, action, detail = {}) {
   await sql`
     INSERT INTO ppwr_audit_log (record_id, revision_id, action, actor, detail)
@@ -122,6 +146,8 @@ export async function saveRevisionAction(fd) {
   const materials = parseJson(s(fd, "materials_json"));
   const safeStatus = ["draft", "review", "cancelled"].includes(current.status) ? current.status : "draft";
   const ppwrId = s(fd, "ppwr_id");
+  const netArea = s(fd, "net_area");
+  const calculatedWeight = calculateEFluteWeight(netArea);
 
   try {
     await sql`
@@ -140,10 +166,10 @@ export async function saveRevisionAction(fd) {
         package_type=${s(fd, "package_type") || DEFAULT_PACKAGE_TYPE},
         usage_purpose='',
         usage_cycle=${s(fd, "usage_cycle")},
-        total_weight=${s(fd, "total_weight")},
+        total_weight=${calculatedWeight},
         production_facility=${s(fd, "production_facility") || DEFAULT_PRODUCTION_FACILITY},
         dimensions=${s(fd, "dimensions")},
-        net_area=${s(fd, "net_area")},
+        net_area=${netArea},
         components=CAST(${JSON.stringify(components)} AS jsonb),
         materials=CAST(${JSON.stringify(materials)} AS jsonb),
         identity_status='Otomatik',
