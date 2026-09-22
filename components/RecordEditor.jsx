@@ -45,8 +45,7 @@ const PACKAGE_RECIPES = {
     { name: "Liner 90 g/m² (2)", gsm: 90 },
     { name: "B Fluting 90 g/m² × 1,35", gsm: 90 * B_FLUTE_TAKE_UP },
     { name: "Krome 210 g/m²", gsm: 210 },
-    { name: "Tutkal 12 g/m² (1)", gsm: 12 },
-    { name: "Tutkal 12 g/m² (2)", gsm: 12 },
+    { name: "Tutkal 12 g/m² × 2 katman", gsm: 24 },
   ],
 };
 
