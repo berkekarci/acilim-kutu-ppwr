@@ -42,8 +42,10 @@ const PACKAGE_RECIPES = {
   "EB Dalga": [
     { name: "Liner 90 g/m² (1)", gsm: 90 },
     { name: "E Fluting 90 g/m² × 1,25", gsm: 90 * E_FLUTE_TAKE_UP },
+    { name: "Tutkal 12 g/m² (1)", gsm: 12 },
     { name: "Liner 90 g/m² (2)", gsm: 90 },
     { name: "B Fluting 90 g/m² × 1,35", gsm: 90 * B_FLUTE_TAKE_UP },
+    { name: "Tutkal 12 g/m² (2)", gsm: 12 },
     { name: "Krome 210 g/m²", gsm: 210 },
   ],
 };
