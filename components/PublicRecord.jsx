@@ -42,10 +42,9 @@ function materialLabel(value) {
     .replace("Tutkal", "Tutkal / Adhesive");
 }
 
-function officePreviewUrl(sourceUrl, mode = "embed") {
+function officePreviewUrl(sourceUrl) {
   if (!sourceUrl) return "#";
-  const path = mode === "view" ? "view.aspx" : "embed.aspx";
-  return `https://view.officeapps.live.com/op/${path}?src=${encodeURIComponent(sourceUrl)}`;
+  return `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(sourceUrl)}`;
 }
 
 export default function PublicRecord({ record, qrDataUrl }) {
@@ -107,7 +106,7 @@ export default function PublicRecord({ record, qrDataUrl }) {
         <section className="card full"><h2>Belgeler / Documents</h2>
           {record.declaration_url && <div className="doc"><div className="docicon">PDF</div><div><h3>AB Uygunluk Beyanı / EU Declaration of Conformity</h3></div><div className="actions"><a className="btn" href={`/belge/${encodeURIComponent(record.public_code)}/uygunluk-beyani`} target="_blank" rel="noreferrer">Görüntüle / View</a><a className="btn primary" href={`/belge/${encodeURIComponent(record.public_code)}/uygunluk-beyani?indir=1`}>PDF İndir / Download PDF</a></div></div>}
           {record.technical_url && <div className="doc"><div className="docicon">PDF</div><div><h3>{value(record.technical_title,"Ambalaj Teknik Dosya Özeti / Packaging Technical File Summary")}</h3><p>{value(record.technical_doc_no)}</p></div><div className="actions"><a className="btn" href={`/belge/${encodeURIComponent(record.public_code)}/teknik-dosya`} target="_blank" rel="noreferrer">Görüntüle / View</a><a className="btn primary" href={`/belge/${encodeURIComponent(record.public_code)}/teknik-dosya?indir=1`}>PDF İndir / Download PDF</a></div></div>}
-          {record.article5_url && <div className="doc doc-office"><div className="docicon">DOC</div><div><h3>Art.5 PPWR Uygunluk Beyanı</h3><p>Article 5 PPWR Declaration of Conformity</p></div><div className="actions"><a className="btn" href={officePreviewUrl(record.article5_url, "view")} target="_blank" rel="noreferrer">Görüntüle / View</a><a className="btn primary" href={`/belge/${encodeURIComponent(record.public_code)}/art-5-uygunluk-beyani?indir=1`}>DOC İndir / Download DOC</a></div><div className="doc-inline-preview"><iframe src={officePreviewUrl(record.article5_url)} title="Art.5 PPWR Uygunluk Beyanı önizlemesi" loading="lazy" /></div></div>}
+          {record.article5_url && <div className="doc"><div className="docicon">DOC</div><div><h3>Art.5 PPWR Uygunluk Beyanı</h3><p>Article 5 PPWR Declaration of Conformity</p></div><div className="actions"><a className="btn" href={officePreviewUrl(record.article5_url)} target="_blank" rel="noreferrer">Görüntüle / View</a><a className="btn primary" href={`/belge/${encodeURIComponent(record.public_code)}/art-5-uygunluk-beyani?indir=1`}>DOC İndir / Download DOC</a></div></div>}
           {!record.declaration_url && !record.technical_url && !record.article5_url && <p className="muted">Yayınlanmış belge bulunmuyor. / No published documents available.</p>}
         </section>
 
