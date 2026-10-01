@@ -172,15 +172,18 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
   const [removedFiles, setRemovedFiles] = useState({
     declaration: false,
     technical: false,
+    article5: false,
     productImage: false,
   });
   const [selectedFiles, setSelectedFiles] = useState({
     declaration: "",
     technical: "",
+    article5: "",
     productImage: "",
   });
   const declarationFileRef = useRef(null);
   const technicalFileRef = useRef(null);
+  const article5FileRef = useRef(null);
   const productImageFileRef = useRef(null);
   const calculatedWeight = calculatePackageWeight(netArea, packageType);
   const visibleMaterials = calculatePackageMaterials(netArea, packageType);
@@ -188,11 +191,23 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
 
 
   async function uploadFormFile(formData, { fileField, urlField, filenameField, removeField, kind, label, type }) {
-    const file = formData.get(fileField);
+    let file = formData.get(fileField);
     formData.delete(fileField);
     if (!(file instanceof File) || file.size === 0) return;
     if (file.size > 50 * 1024 * 1024) throw new Error(`${label} 50 MB sınırını aşıyor.`);
     if (type === "pdf" && file.type !== "application/pdf") throw new Error(`${label} yalnızca PDF olabilir.`);
+    if (type === "word") {
+      const extension = file.name.toLowerCase().split(".").pop();
+      const allowedTypes = [
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ];
+      if (!(["doc", "docx"].includes(extension) && (allowedTypes.includes(file.type) || !file.type || file.type === "application/octet-stream"))) {
+        throw new Error(`${label} yalnızca DOC veya DOCX olabilir.`);
+      }
+      const expectedType = extension === "docx" ? allowedTypes[1] : allowedTypes[0];
+      if (file.type !== expectedType) file = new File([file], file.name, { type: expectedType });
+    }
     if (type === "image" && !file.type.startsWith("image/")) throw new Error(`${label} geçerli bir görsel olmalıdır.`);
 
     setUploadState(`${label} yükleniyor…`);
@@ -208,7 +223,7 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
     );
     formData.set(urlField, blob.url);
     if (removeField) formData.set(removeField, "");
-    if (type === "pdf") {
+    if (type === "pdf" || type === "word") {
       const downloadField = urlField.replace("_url_input", "_download_url_input");
       formData.set(downloadField, blob.downloadUrl || blob.url);
     }
@@ -236,6 +251,15 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
         kind: "technical",
         label: "Teknik Dosya",
         type: "pdf",
+      });
+      await uploadFormFile(formData, {
+        fileField: "article5_file",
+        urlField: "article5_url_input",
+        filenameField: "article5_filename_input",
+        removeField: "article5_remove",
+        kind: "article5",
+        label: "Art.5 PPWR Uygunluk Beyanı",
+        type: "word",
       });
       await uploadFormFile(formData, {
         fileField: "product_image",
@@ -268,6 +292,7 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
       <input type="hidden" name="materials_json" value={JSON.stringify(visibleMaterials)} />
       <input type="hidden" name="declaration_remove" value={removedFiles.declaration ? "1" : ""} />
       <input type="hidden" name="technical_remove" value={removedFiles.technical ? "1" : ""} />
+      <input type="hidden" name="article5_remove" value={removedFiles.article5 ? "1" : ""} />
       <input type="hidden" name="product_image_remove" value={removedFiles.productImage ? "1" : ""} />
       {uploadError && <div className="errorbox">{uploadError}</div>}
       {uploadState && <div className="uploadbox">{uploadState}</div>}
@@ -383,7 +408,7 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
 
         <section className="admin-panel">
           <h2>4. Belge ve görsel dosyaları</h2>
-          <p className="admin-hint">Dosyalar tarayıcıdan doğrudan Vercel Blob'a yüklenir. PDF ve görseller için dosya başına üst sınır 50 MB'dır.</p>
+          <p className="admin-hint">Dosyalar tarayıcıdan doğrudan Vercel Blob'a yüklenir. PDF, DOC/DOCX ve görseller için dosya başına üst sınır 50 MB'dır.</p>
           <div className="form-grid">
             <label>AB Uygunluk Beyanı PDF<input ref={declarationFileRef} type="file" name="declaration_file" accept="application/pdf" onChange={(e) => {
               const file = e.target.files?.[0];
@@ -431,6 +456,28 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
               ) : removedFiles.technical ? <span className="file-remove-pending">Kaldırılacak. İsterseniz yukarıdan yeni PDF seçebilirsiniz.</span> : "Dosya yüklenmedi"}
             </div>
 
+            <label>Art.5 PPWR Uygunluk Beyanı (DOC/DOCX)<input ref={article5FileRef} type="file" name="article5_file" accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={(e) => {
+              const file = e.target.files?.[0];
+              setSelectedFiles((v) => ({ ...v, article5: file?.name || "" }));
+              if (file) setRemovedFiles((v) => ({ ...v, article5: false }));
+            }} /></label>
+            <div className="existing-file">
+              {selectedFiles.article5 ? (
+                <div className="existing-file-row selected-file-row">
+                  <span>{selectedFiles.article5}</span>
+                  <button type="button" className="file-remove-btn" title="Seçilen dosyayı kaldır" aria-label="Seçilen Art.5 PPWR Uygunluk Beyanı belgesini kaldır" onClick={() => {
+                    if (article5FileRef.current) article5FileRef.current.value = "";
+                    setSelectedFiles((v) => ({ ...v, article5: "" }));
+                  }}>×</button>
+                </div>
+              ) : recordData.article5_url && !removedFiles.article5 ? (
+                <div className="existing-file-row">
+                  <a href={`/belge/${encodeURIComponent(publicCode)}/art-5-uygunluk-beyani`} target="_blank" rel="noreferrer">{recordData.article5_filename || "Mevcut DOC/DOCX belgesini aç"}</a>
+                  <button type="button" className="file-remove-btn" title="Belgeyi kaldır" aria-label="Art.5 PPWR Uygunluk Beyanı belgesini kaldır" onClick={() => setRemovedFiles((v) => ({ ...v, article5: true }))}>×</button>
+                </div>
+              ) : removedFiles.article5 ? <span className="file-remove-pending">Kaldırılacak. İsterseniz yukarıdan yeni DOC/DOCX seçebilirsiniz.</span> : "Dosya yüklenmedi"}
+            </div>
+
             <label>Ürün / CAD Görseli<input ref={productImageFileRef} type="file" name="product_image" accept="image/*" onChange={(e) => {
               const file = e.target.files?.[0];
               setSelectedFiles((v) => ({ ...v, productImage: file?.name || "" }));
@@ -462,6 +509,7 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
             <div className="auto-status"><span>Ambalaj kimliği</span><strong>{ppwrId && recordData.product_name ? "Hazır" : "Temel bilgiler bekleniyor"}</strong></div>
             <div className="auto-status"><span>AB Uygunluk Beyanı</span><strong>{recordData.declaration_url ? "PDF eklendi" : "PDF yok"}</strong></div>
             <div className="auto-status"><span>Teknik dosya</span><strong>{recordData.technical_url ? "PDF eklendi" : "PDF yok"}</strong></div>
+            <div className="auto-status"><span>Art.5 PPWR Uygunluk Beyanı</span><strong>{recordData.article5_url ? "DOC/DOCX eklendi" : "Belge yok"}</strong></div>
           </div>
         </section>
 

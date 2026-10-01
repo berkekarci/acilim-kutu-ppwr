@@ -191,6 +191,7 @@ export async function saveRecordAction(fd) {
 
   const declarationRemove = s(fd, "declaration_remove") === "1";
   const technicalRemove = s(fd, "technical_remove") === "1";
+  const article5Remove = s(fd, "article5_remove") === "1";
   const productImageRemove = s(fd, "product_image_remove") === "1";
 
   const incomingDeclarationUrl = nullable(fd, "declaration_url_input");
@@ -210,6 +211,15 @@ export async function saveRecordAction(fd) {
   const technicalFilename = incomingTechnicalUrl
     ? nullable(fd, "technical_filename_input")
     : (technicalRemove ? null : current.technical_filename);
+
+  const incomingArticle5Url = nullable(fd, "article5_url_input");
+  const article5Url = incomingArticle5Url || (article5Remove ? null : current.article5_url);
+  const article5DownloadUrl = incomingArticle5Url
+    ? (nullable(fd, "article5_download_url_input") || incomingArticle5Url)
+    : (article5Remove ? null : current.article5_download_url);
+  const article5Filename = incomingArticle5Url
+    ? nullable(fd, "article5_filename_input")
+    : (article5Remove ? null : current.article5_filename);
 
   const incomingProductImageUrl = nullable(fd, "product_image_url_input");
   const productImageUrl = incomingProductImageUrl || (productImageRemove ? null : current.product_image_url);
@@ -255,6 +265,9 @@ export async function saveRecordAction(fd) {
         technical_url=${technicalUrl},
         technical_download_url=${technicalDownloadUrl},
         technical_filename=${technicalFilename},
+        article5_url=${article5Url},
+        article5_download_url=${article5DownloadUrl},
+        article5_filename=${article5Filename},
         product_image_url=${productImageUrl},
         product_image_source='',
         product_image_access='',
@@ -276,6 +289,7 @@ export async function saveRecordAction(fd) {
   const replacedOrRemoved = [
     [current.declaration_url, declarationUrl],
     [current.technical_url, technicalUrl],
+    [current.article5_url, article5Url],
     [current.product_image_url, productImageUrl],
   ].filter(([oldUrl, newUrl]) => oldUrl && oldUrl !== newUrl);
 

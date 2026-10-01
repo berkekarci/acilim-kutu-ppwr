@@ -3,7 +3,7 @@ import { getPublicRecordByCode } from "@/lib/db";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function safePdfSource(url) {
+function safeBlobSource(url) {
   try {
     const parsed = new URL(url);
     return (
@@ -17,19 +17,30 @@ function safePdfSource(url) {
 }
 
 function filenameFor(record, type) {
-  const raw =
-    type === "uygunluk-beyani"
-      ? record.declaration_filename || "AB_Uygunluk_Beyani.pdf"
-      : record.technical_filename || "Teknik_Dosya.pdf";
+  if (type === "uygunluk-beyani") {
+    const name = String(record.declaration_filename || "AB_Uygunluk_Beyani.pdf").trim();
+    return name.toLowerCase().endsWith(".pdf") ? name : `${name}.pdf`;
+  }
+  if (type === "teknik-dosya") {
+    const name = String(record.technical_filename || "Teknik_Dosya.pdf").trim();
+    return name.toLowerCase().endsWith(".pdf") ? name : `${name}.pdf`;
+  }
+  const name = String(record.article5_filename || "Art5_PPWR_Uygunluk_Beyani.docx").trim();
+  return /\.docx?$/i.test(name) ? name : `${name}.docx`;
+}
 
-  const name = String(raw).trim() || "belge.pdf";
-  return name.toLowerCase().endsWith(".pdf") ? name : `${name}.pdf`;
+function contentTypeFor(filename, upstreamType) {
+  if (/\.docx$/i.test(filename)) {
+    return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  }
+  if (/\.doc$/i.test(filename)) return "application/msword";
+  return upstreamType?.startsWith("application/pdf") ? upstreamType : "application/pdf";
 }
 
 export async function GET(request, { params }) {
   const { kod, tur } = await params;
 
-  if (!["uygunluk-beyani", "teknik-dosya"].includes(tur)) {
+  if (!["uygunluk-beyani", "teknik-dosya", "art-5-uygunluk-beyani"].includes(tur)) {
     return new Response("Belge bulunamadı.", { status: 404 });
   }
 
@@ -38,10 +49,13 @@ export async function GET(request, { params }) {
     return new Response("Kayıt bulunamadı.", { status: 404 });
   }
 
-  const sourceUrl =
-    tur === "uygunluk-beyani" ? record.declaration_url : record.technical_url;
+  const sourceUrl = tur === "uygunluk-beyani"
+    ? record.declaration_url
+    : tur === "teknik-dosya"
+      ? record.technical_url
+      : record.article5_url;
 
-  if (!sourceUrl || !safePdfSource(sourceUrl)) {
+  if (!sourceUrl || !safeBlobSource(sourceUrl)) {
     return new Response("Belge bulunamadı.", { status: 404 });
   }
 
@@ -57,7 +71,7 @@ export async function GET(request, { params }) {
   return new Response(upstream.body, {
     status: 200,
     headers: {
-      "Content-Type": "application/pdf",
+      "Content-Type": contentTypeFor(filename, upstream.headers.get("content-type")),
       "Content-Disposition": `${download ? "attachment" : "inline"}; filename*=UTF-8''${encodedFilename}`,
       "Cache-Control": "private, no-store, max-age=0",
       "X-Content-Type-Options": "nosniff",

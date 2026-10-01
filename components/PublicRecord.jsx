@@ -42,6 +42,12 @@ function materialLabel(value) {
     .replace("Tutkal", "Tutkal / Adhesive");
 }
 
+function officePreviewUrl(sourceUrl, mode = "embed") {
+  if (!sourceUrl) return "#";
+  const path = mode === "view" ? "view.aspx" : "embed.aspx";
+  return `https://view.officeapps.live.com/op/${path}?src=${encodeURIComponent(sourceUrl)}`;
+}
+
 export default function PublicRecord({ record, qrDataUrl }) {
   const [imageOpen, setImageOpen] = useState(false);
   const materials = array(record.materials);
@@ -90,6 +96,7 @@ export default function PublicRecord({ record, qrDataUrl }) {
           <div className="check"><b>Ambalaj Kimliği / Packaging Identity</b><div className="flag ok">● Yayında / Published</div></div>
           <div className="check"><b>Teknik Dosya / Technical File</b><div className={record.technical_url ? "flag ok" : "flag"}>● {record.technical_url ? "PDF eklendi / PDF Available" : "PDF yok / No PDF"}</div></div>
           <div className="check"><b>AB Uygunluk Beyanı / EU Declaration of Conformity</b><div className={record.declaration_url ? "flag ok" : "flag"}>● {record.declaration_url ? "PDF eklendi / PDF Available" : "PDF yok / No PDF"}</div></div>
+          <div className="check"><b>Art.5 PPWR Uygunluk Beyanı</b><div className={record.article5_url ? "flag ok" : "flag"}>● {record.article5_url ? "DOC/DOCX eklendi / Available" : "Belge yok / No document"}</div></div>
         </div></section>
 
         <section className="card full"><h2>Malzeme Bileşimi / Material Composition</h2><div className="table-scroll"><table className="materials"><thead><tr><th>Malzeme / Material</th><th>Ağırlık / Weight</th><th>Oran / Ratio</th></tr></thead><tbody>
@@ -100,7 +107,8 @@ export default function PublicRecord({ record, qrDataUrl }) {
         <section className="card full"><h2>Belgeler / Documents</h2>
           {record.declaration_url && <div className="doc"><div className="docicon">PDF</div><div><h3>AB Uygunluk Beyanı / EU Declaration of Conformity</h3></div><div className="actions"><a className="btn" href={`/belge/${encodeURIComponent(record.public_code)}/uygunluk-beyani`} target="_blank" rel="noreferrer">Görüntüle / View</a><a className="btn primary" href={`/belge/${encodeURIComponent(record.public_code)}/uygunluk-beyani?indir=1`}>PDF İndir / Download PDF</a></div></div>}
           {record.technical_url && <div className="doc"><div className="docicon">PDF</div><div><h3>{value(record.technical_title,"Ambalaj Teknik Dosya Özeti / Packaging Technical File Summary")}</h3><p>{value(record.technical_doc_no)}</p></div><div className="actions"><a className="btn" href={`/belge/${encodeURIComponent(record.public_code)}/teknik-dosya`} target="_blank" rel="noreferrer">Görüntüle / View</a><a className="btn primary" href={`/belge/${encodeURIComponent(record.public_code)}/teknik-dosya?indir=1`}>PDF İndir / Download PDF</a></div></div>}
-          {!record.declaration_url && !record.technical_url && <p className="muted">Yayınlanmış belge bulunmuyor. / No published documents available.</p>}
+          {record.article5_url && <div className="doc doc-office"><div className="docicon">DOC</div><div><h3>Art.5 PPWR Uygunluk Beyanı</h3><p>Article 5 PPWR Declaration of Conformity</p></div><div className="actions"><a className="btn" href={officePreviewUrl(record.article5_url, "view")} target="_blank" rel="noreferrer">Görüntüle / View</a><a className="btn primary" href={`/belge/${encodeURIComponent(record.public_code)}/art-5-uygunluk-beyani?indir=1`}>DOC İndir / Download DOC</a></div><div className="doc-inline-preview"><iframe src={officePreviewUrl(record.article5_url)} title="Art.5 PPWR Uygunluk Beyanı önizlemesi" loading="lazy" /></div></div>}
+          {!record.declaration_url && !record.technical_url && !record.article5_url && <p className="muted">Yayınlanmış belge bulunmuyor. / No published documents available.</p>}
         </section>
 
         <section className="card full product-visual-card"><h2>Ürün Görseli / Product Visualization</h2>
