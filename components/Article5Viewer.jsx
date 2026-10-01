@@ -12,6 +12,11 @@ export default function Article5Viewer({ code, legacyDoc }) {
   const fileUrl = `/belge/${encodeURIComponent(code)}/art-5-uygunluk-beyani`;
 
   useEffect(() => {
+    // The srcDoc load event can precede hydration on a fast connection.
+    if (frameRef.current?.contentDocument?.getElementById("document")) setFrameReady(true);
+  }, []);
+
+  useEffect(() => {
     if (!frameReady || legacyDoc) return;
     const controller = new AbortController();
     let disposed = false;
