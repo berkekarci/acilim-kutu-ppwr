@@ -472,7 +472,7 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
                 </div>
               ) : recordData.article5_url && !removedFiles.article5 ? (
                 <div className="existing-file-row">
-                  <a href={`/belge/${encodeURIComponent(publicCode)}/art-5-uygunluk-beyani`} target="_blank" rel="noreferrer">{recordData.article5_filename || "Mevcut DOC/DOCX belgesini aç"}</a>
+                  <a href={`/belge/${encodeURIComponent(publicCode)}/art-5-uygunluk-beyani/onizleme`} target="_blank" rel="noreferrer">{recordData.article5_filename || "Mevcut DOC/DOCX belgesini aç"}</a>
                   <button type="button" className="file-remove-btn" title="Belgeyi kaldır" aria-label="Art.5 PPWR Uygunluk Beyanı belgesini kaldır" onClick={() => setRemovedFiles((v) => ({ ...v, article5: true }))}>×</button>
                 </div>
               ) : removedFiles.article5 ? <span className="file-remove-pending">Kaldırılacak. İsterseniz yukarıdan yeni DOC/DOCX seçebilirsiniz.</span> : "Dosya yüklenmedi"}
