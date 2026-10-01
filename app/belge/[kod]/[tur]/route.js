@@ -25,8 +25,12 @@ function filenameFor(record, type) {
     const name = String(record.technical_filename || "Teknik_Dosya.pdf").trim();
     return name.toLowerCase().endsWith(".pdf") ? name : `${name}.pdf`;
   }
-  const name = String(record.article5_filename || "Art5_PPWR_Uygunluk_Beyani.docx").trim();
-  return /\.docx?$/i.test(name) ? name : `${name}.docx`;
+  const originalName = String(record.article5_filename || "").trim();
+  const extension = /\.doc$/i.test(originalName) ? "doc" : "docx";
+  const shortCode = String(record.public_code || "PPWR")
+    .replace(/[^a-z0-9_-]+/gi, "-")
+    .replace(/^-+|-+$/g, "") || "PPWR";
+  return `ART5_${shortCode}.${extension}`;
 }
 
 function contentTypeFor(filename, upstreamType) {
@@ -39,8 +43,9 @@ function contentTypeFor(filename, upstreamType) {
 
 export async function GET(request, { params }) {
   const { kod, tur } = await params;
+  const isArticle5 = tur === "art-5-uygunluk-beyani" || /^art-5-uygunluk-beyani\.docx?$/i.test(tur);
 
-  if (!["uygunluk-beyani", "teknik-dosya", "art-5-uygunluk-beyani"].includes(tur)) {
+  if (!["uygunluk-beyani", "teknik-dosya"].includes(tur) && !isArticle5) {
     return new Response("Belge bulunamadı.", { status: 404 });
   }
 
@@ -53,7 +58,9 @@ export async function GET(request, { params }) {
     ? record.declaration_url
     : tur === "teknik-dosya"
       ? record.technical_url
-      : record.article5_url;
+      : isArticle5
+        ? record.article5_url
+        : null;
 
   if (!sourceUrl || !safeBlobSource(sourceUrl)) {
     return new Response("Belge bulunamadı.", { status: 404 });
@@ -65,7 +72,7 @@ export async function GET(request, { params }) {
   }
 
   const download = new URL(request.url).searchParams.get("indir") === "1";
-  const filename = filenameFor(record, tur);
+  const filename = filenameFor(record, isArticle5 ? "art-5-uygunluk-beyani" : tur);
   const encodedFilename = encodeURIComponent(filename);
 
   return new Response(upstream.body, {
