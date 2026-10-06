@@ -192,11 +192,39 @@ export async function saveRecordAction(fd) {
 
   const technicalAuto = fd.has("technical_auto") ? s(fd, "technical_auto") === "1" : Boolean(current.technical_auto);
   const declarationAuto = fd.has("declaration_auto") ? s(fd, "declaration_auto") === "1" : Boolean(current.declaration_auto);
+  const article5Auto = fd.has("article5_auto") ? s(fd, "article5_auto") === "1" : Boolean(current.article5_auto);
   if (technicalAuto || declarationAuto) {
     const required = [["ppwr_id", "PPWR ID"], ["product_name", "Ürün / Ambalaj Adı"], ["dimensions", "Ölçüler"], ["review_date", "Son İnceleme Tarihi"]];
     const missing = required.filter(([key]) => !s(fd, key)).map(([, label]) => label);
     if (!parseAreaM2(netArea)) missing.push("Net Alan");
     if (missing.length) return { error: `Otomatik PDF için şu alanları doldurun: ${missing.join(", ")}.` };
+  }
+
+  if (article5Auto) {
+    const issueDate = s(fd, "document_issue_date") || s(fd, "review_date") || current.document_issue_date || current.review_date;
+    const missing = [];
+    if (!ppwrId) missing.push("PPWR ID");
+    if (!issueDate) missing.push("Beyan Düzenleme Tarihi");
+    if (missing.length) return { error: `Otomatik Art.5 Word belgesi için şu alanları doldurun: ${missing.join(", ")}.` };
+
+    const template = (await sql`
+      SELECT v.article5_url
+      FROM ppwr_records r
+      JOIN LATERAL (
+        SELECT * FROM ppwr_revisions x
+        WHERE x.record_id = r.id
+        ORDER BY x.updated_at DESC, x.id DESC
+        LIMIT 1
+      ) v ON true
+      WHERE v.article5_url IS NOT NULL
+        AND lower(COALESCE(v.article5_filename, '')) LIKE '%.docx'
+      ORDER BY CASE WHEN lower(r.code) = lower('160503') THEN 0 ELSE 1 END,
+               v.updated_at DESC, v.id DESC
+      LIMIT 1
+    `)[0];
+    if (!template?.article5_url) {
+      return { error: "Otomatik Art.5 Word belgesi için sistemde bir DOCX şablonu bulunamadı. Önce 160503 kaydına verdiğiniz Art.5 DOCX dosyasını bir kez yükleyin." };
+    }
   }
 
   const declarationRemove = s(fd, "declaration_remove") === "1";
@@ -281,6 +309,7 @@ export async function saveRecordAction(fd) {
         declaration_status=${declarationAuto || declarationUrl ? "PDF eklendi" : "PDF yok"},
         technical_auto=${technicalAuto},
         declaration_auto=${declarationAuto},
+        article5_auto=${article5Auto},
         document_issue_date=${s(fd, "document_issue_date") || current.document_issue_date || s(fd, "review_date")},
         signatory_name=${s(fd, "signatory_name")},
         signatory_title=${s(fd, "signatory_title")},
