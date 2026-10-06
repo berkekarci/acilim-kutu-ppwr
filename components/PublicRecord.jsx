@@ -96,7 +96,7 @@ export default function PublicRecord({ record, qrDataUrl }) {
           <div className="check"><b>Ambalaj Kimliği / Packaging Identity</b><div className="flag ok">● Yayında / Published</div></div>
           <div className="check"><b>Teknik Dosya / Technical File</b><div className={technicalAvailable ? "flag ok" : "flag"}>● {technicalAvailable ? "PDF eklendi / PDF Available" : "PDF yok / No PDF"}</div></div>
           <div className="check"><b>AB Uygunluk Beyanı / EU Declaration of Conformity</b><div className={declarationAvailable ? "flag ok" : "flag"}>● {declarationAvailable ? "PDF eklendi / PDF Available" : "PDF yok / No PDF"}</div></div>
-          <div className="check"><b>Art.5 PPWR Uygunluk Beyanı</b><div className={article5Available ? "flag ok" : "flag"}>● {article5Available ? (record.article5_auto ? "Word otomatik / Auto Word" : "DOC/DOCX eklendi / Available") : "Belge yok / No document"}</div></div>
+          <div className="check"><b>Art.5 PPWR Uygunluk Beyanı</b><div className={article5Available ? "flag ok" : "flag"}>● {article5Available ? "DOC eklendi / DOC Added" : "Belge yok / No document"}</div></div>
         </div></section>
 
         <section className="card full"><h2>Malzeme Bileşimi / Material Composition</h2><div className="table-scroll"><table className="materials"><thead><tr><th>Malzeme / Material</th><th>Ağırlık / Weight</th><th>Oran / Ratio</th></tr></thead><tbody>
