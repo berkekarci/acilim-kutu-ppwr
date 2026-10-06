@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { upload } from "@vercel/blob/client";
 import { COMPANY } from "@/lib/company";
-import { automaticPdfFilename, hasDeclarationPdf, hasTechnicalPdf } from "@/lib/document-settings";
+import { automaticArticle5Filename, automaticPdfFilename, hasArticle5Document, hasDeclarationPdf, hasTechnicalPdf } from "@/lib/document-settings";
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
@@ -172,6 +172,7 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
   const [submitting, setSubmitting] = useState(false);
   const [technicalAuto, setTechnicalAuto] = useState(Boolean(recordData.technical_auto));
   const [declarationAuto, setDeclarationAuto] = useState(Boolean(recordData.declaration_auto));
+  const [article5Auto, setArticle5Auto] = useState(Boolean(recordData.article5_auto));
   const [removedFiles, setRemovedFiles] = useState({
     declaration: false,
     technical: false,
@@ -245,12 +246,14 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
   async function submitWithUploads(formData) {
     setSubmitting(true);
     setUploadError("");
-    const generateBoth = formData.get("save_intent") === "generate_pdfs";
-    if (generateBoth) { setTechnicalAuto(true); setDeclarationAuto(true); }
-    const useTechnicalAuto = generateBoth || technicalAuto;
-    const useDeclarationAuto = generateBoth || declarationAuto;
+    const generateAll = ["generate_pdfs", "generate_documents"].includes(String(formData.get("save_intent") || ""));
+    if (generateAll) { setTechnicalAuto(true); setDeclarationAuto(true); setArticle5Auto(true); }
+    const useTechnicalAuto = generateAll || technicalAuto;
+    const useDeclarationAuto = generateAll || declarationAuto;
+    const useArticle5Auto = generateAll || article5Auto;
     formData.set("technical_auto", useTechnicalAuto ? "1" : "0");
     formData.set("declaration_auto", useDeclarationAuto ? "1" : "0");
+    formData.set("article5_auto", useArticle5Auto ? "1" : "0");
     try {
       if (useDeclarationAuto) formData.delete("declaration_file");
       else await uploadFormFile(formData, {
@@ -272,7 +275,8 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
         label: "Teknik Dosya",
         type: "pdf",
       });
-      await uploadFormFile(formData, {
+      if (useArticle5Auto) formData.delete("article5_file");
+      else await uploadFormFile(formData, {
         fileField: "article5_file",
         urlField: "article5_url_input",
         filenameField: "article5_filename_input",
@@ -455,8 +459,8 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
         <section className="admin-panel">
           <h2>4. Belge ve görsel dosyaları</h2>
           <div className="pdf-automation">
-            <h3>Otomatik PDF oluşturma</h3>
-            <p className="admin-hint">Ürün tanımı, iş ve sistem kodları, teknik bilgiler, malzeme bileşimi, QR kod ve bağlantılar bu kayıttan alınır. Otomatik seçeneği açıkken kaydettiğiniz değişiklikler PDF'lere de yansır.</p>
+            <h3>Otomatik belge oluşturma</h3>
+            <p className="admin-hint">İki PDF panel verilerinden üretilir. Art.5 Word belgesinde ise verdiğiniz sabit şablon korunur; yalnızca iki PPWR ID alanı ve Beyan Düzenleme Tarihi otomatik değiştirilir.</p>
             <div className="form-grid">
               <label>Ambalaj Kimlik ve Teknik Bilgi Belgesi
                 <select value={technicalAuto ? "auto" : "upload"} onChange={(e) => setTechnicalAuto(e.target.value === "auto")}>
@@ -468,6 +472,12 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
                 <select value={declarationAuto ? "auto" : "upload"} onChange={(e) => setDeclarationAuto(e.target.value === "auto")}>
                   <option value="upload">Yüklediğim PDF'yi kullan</option>
                   <option value="auto">Panel bilgilerinden otomatik oluştur</option>
+                </select>
+              </label>
+              <label>Art.5 PPWR Uygunluk Beyanı
+                <select value={article5Auto ? "auto" : "upload"} onChange={(e) => setArticle5Auto(e.target.value === "auto")}>
+                  <option value="upload">Yüklediğim DOC/DOCX'i kullan</option>
+                  <option value="auto">Şablondan otomatik Word oluştur</option>
                 </select>
               </label>
               <Input label="Beyan Düzenleme Tarihi" name="document_issue_date" defaultValue={recordData.document_issue_date || recordData.review_date} placeholder="GG.AA.YYYY" />
@@ -521,7 +531,7 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
               </div>
             </div>
             <p className="admin-hint pdf-signature-note">Kaşe ve/veya imza görseli yüklüyse otomatik AB Uygunluk Beyanı'ndaki imza alanına yerleştirilir. En temiz sonuç için şeffaf arka planlı PNG kullanın.</p>
-            <button className="admin-primary" type="submit" name="save_intent" value="generate_pdfs">Kaydet ve İki PDF'yi Oluştur</button>
+            <button className="admin-primary" type="submit" name="save_intent" value="generate_documents">Kaydet ve 3 Belgeyi Oluştur</button>
           </div>
           <p className="admin-hint">PDF, DOC/DOCX ve görseller için dosya başına üst sınır 50 MB'dır.</p>
           <div className="form-grid">
@@ -581,13 +591,18 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
               ) : removedFiles.technical ? <span className="file-remove-pending">Kaldırılacak. İsterseniz yukarıdan yeni PDF seçebilirsiniz.</span> : "Dosya yüklenmedi"}
             </div>
 
-            <label>Art.5 PPWR Uygunluk Beyanı (DOC/DOCX)<input ref={article5FileRef} type="file" name="article5_file" accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={(e) => {
+            <label>Art.5 PPWR Uygunluk Beyanı (DOC/DOCX)<input disabled={article5Auto} ref={article5FileRef} type="file" name="article5_file" accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={(e) => {
               const file = e.target.files?.[0];
               setSelectedFiles((v) => ({ ...v, article5: file?.name || "" }));
               if (file) setRemovedFiles((v) => ({ ...v, article5: false }));
             }} /></label>
             <div className="existing-file">
-              {selectedFiles.article5 ? (
+              {article5Auto ? (
+                <div className="auto-pdf-file">
+                  <strong>Şablondan otomatik Word oluşturulur</strong>
+                  {recordData.article5_auto ? <a href={`/belge/${encodeURIComponent(publicCode)}/art-5-uygunluk-beyani/onizleme`} target="_blank" rel="noopener noreferrer">{automaticArticle5Filename({ ...recordData, public_code: publicCode, ppwr_id: ppwrId })} · Görüntüle</a> : <span>Etkinleştirmek için kaydedin.</span>}
+                </div>
+              ) : selectedFiles.article5 ? (
                 <div className="existing-file-row selected-file-row">
                   <span>{selectedFiles.article5}</span>
                   <button type="button" className="file-remove-btn" title="Seçilen dosyayı kaldır" aria-label="Seçilen Art.5 PPWR Uygunluk Beyanı belgesini kaldır" onClick={() => {
@@ -634,7 +649,7 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
             <div className="auto-status"><span>Ambalaj kimliği</span><strong>{ppwrId && recordData.product_name ? "Hazır" : "Temel bilgiler bekleniyor"}</strong></div>
             <div className="auto-status"><span>AB Uygunluk Beyanı</span><strong>{hasDeclarationPdf(recordData) ? "PDF hazır" : "PDF yok"}</strong></div>
             <div className="auto-status"><span>Teknik dosya</span><strong>{hasTechnicalPdf(recordData) ? "PDF hazır" : "PDF yok"}</strong></div>
-            <div className="auto-status"><span>Art.5 PPWR Uygunluk Beyanı</span><strong>{recordData.article5_url ? "DOC/DOCX eklendi" : "Belge yok"}</strong></div>
+            <div className="auto-status"><span>Art.5 PPWR Uygunluk Beyanı</span><strong>{hasArticle5Document(recordData) ? (recordData.article5_auto ? "Word otomatik hazır" : "DOC/DOCX eklendi") : "Belge yok"}</strong></div>
           </div>
         </section>
 
