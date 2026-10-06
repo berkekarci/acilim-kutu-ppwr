@@ -177,17 +177,23 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
     technical: false,
     article5: false,
     productImage: false,
+    stampImage: false,
+    signatureImage: false,
   });
   const [selectedFiles, setSelectedFiles] = useState({
     declaration: "",
     technical: "",
     article5: "",
     productImage: "",
+    stampImage: "",
+    signatureImage: "",
   });
   const declarationFileRef = useRef(null);
   const technicalFileRef = useRef(null);
   const article5FileRef = useRef(null);
   const productImageFileRef = useRef(null);
+  const stampImageFileRef = useRef(null);
+  const signatureImageFileRef = useRef(null);
   const calculatedWeight = calculatePackageWeight(netArea, packageType);
   const visibleMaterials = calculatePackageMaterials(netArea, packageType);
   const consistencyCheck = getConsistencyCheck(dimensions, netArea, packageType, papCode);
@@ -211,7 +217,10 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
       const expectedType = extension === "docx" ? allowedTypes[1] : allowedTypes[0];
       if (file.type !== expectedType) file = new File([file], file.name, { type: expectedType });
     }
-    if (type === "image" && !file.type.startsWith("image/")) throw new Error(`${label} geçerli bir görsel olmalıdır.`);
+    if ((type === "image" || type === "pdf-image") && !file.type.startsWith("image/")) throw new Error(`${label} geçerli bir görsel olmalıdır.`);
+    if (type === "pdf-image" && !["image/png", "image/jpeg"].includes(file.type)) {
+      throw new Error(`${label} için PNG veya JPG/JPEG kullanın.`);
+    }
 
     setUploadState(`${label} yükleniyor…`);
     const blob = await upload(
@@ -281,6 +290,24 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
         label: "Ürün / CAD görseli",
         type: "image",
       });
+      await uploadFormFile(formData, {
+        fileField: "stamp_image",
+        urlField: "stamp_image_url_input",
+        filenameField: "stamp_image_filename_input",
+        removeField: "stamp_image_remove",
+        kind: "stamp",
+        label: "Firma kaşesi",
+        type: "pdf-image",
+      });
+      await uploadFormFile(formData, {
+        fileField: "signature_image",
+        urlField: "signature_image_url_input",
+        filenameField: "signature_image_filename_input",
+        removeField: "signature_image_remove",
+        kind: "signature",
+        label: "İmza görseli",
+        type: "pdf-image",
+      });
       setUploadState("Kayıt verileri kaydediliyor…");
     } catch (error) {
       setSubmitting(false);
@@ -311,6 +338,8 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
       <input type="hidden" name="technical_remove" value={removedFiles.technical ? "1" : ""} />
       <input type="hidden" name="article5_remove" value={removedFiles.article5 ? "1" : ""} />
       <input type="hidden" name="product_image_remove" value={removedFiles.productImage ? "1" : ""} />
+      <input type="hidden" name="stamp_image_remove" value={removedFiles.stampImage ? "1" : ""} />
+      <input type="hidden" name="signature_image_remove" value={removedFiles.signatureImage ? "1" : ""} />
       {uploadError && <div className="errorbox">{uploadError}</div>}
       {uploadState && <div className="uploadbox">{uploadState}</div>}
 
@@ -444,8 +473,54 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
               <Input label="Beyan Düzenleme Tarihi" name="document_issue_date" defaultValue={recordData.document_issue_date || recordData.review_date} placeholder="GG.AA.YYYY" />
               <Input label="Beyanı İmzalayacak Kişi" name="signatory_name" defaultValue={recordData.signatory_name} />
               <Input label="İmzalayanın Görevi / Unvanı" name="signatory_title" defaultValue={recordData.signatory_title} />
+              <label>Firma Kaşesi Görseli
+                <input ref={stampImageFileRef} type="file" name="stamp_image" accept="image/png,image/jpeg" onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  setSelectedFiles((v) => ({ ...v, stampImage: file?.name || "" }));
+                  if (file) setRemovedFiles((v) => ({ ...v, stampImage: false }));
+                }} />
+              </label>
+              <div className="existing-file">
+                {selectedFiles.stampImage ? (
+                  <div className="existing-file-row selected-file-row">
+                    <span>{selectedFiles.stampImage}</span>
+                    <button type="button" className="file-remove-btn" title="Seçilen kaşeyi kaldır" aria-label="Seçilen firma kaşesi görselini kaldır" onClick={() => {
+                      if (stampImageFileRef.current) stampImageFileRef.current.value = "";
+                      setSelectedFiles((v) => ({ ...v, stampImage: "" }));
+                    }}>×</button>
+                  </div>
+                ) : recordData.stamp_image_url && !removedFiles.stampImage ? (
+                  <div className="existing-file-row">
+                    <a href={recordData.stamp_image_url} target="_blank" rel="noreferrer">{recordData.stamp_image_filename || "Mevcut kaşeyi aç"}</a>
+                    <button type="button" className="file-remove-btn" title="Kaşeyi kaldır" aria-label="Firma kaşesi görselini kaldır" onClick={() => setRemovedFiles((v) => ({ ...v, stampImage: true }))}>×</button>
+                  </div>
+                ) : removedFiles.stampImage ? <span className="file-remove-pending">Kaşe kaldırılacak.</span> : "Kaşe yüklenmedi"}
+              </div>
+              <label>İmza Görseli
+                <input ref={signatureImageFileRef} type="file" name="signature_image" accept="image/png,image/jpeg" onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  setSelectedFiles((v) => ({ ...v, signatureImage: file?.name || "" }));
+                  if (file) setRemovedFiles((v) => ({ ...v, signatureImage: false }));
+                }} />
+              </label>
+              <div className="existing-file">
+                {selectedFiles.signatureImage ? (
+                  <div className="existing-file-row selected-file-row">
+                    <span>{selectedFiles.signatureImage}</span>
+                    <button type="button" className="file-remove-btn" title="Seçilen imzayı kaldır" aria-label="Seçilen imza görselini kaldır" onClick={() => {
+                      if (signatureImageFileRef.current) signatureImageFileRef.current.value = "";
+                      setSelectedFiles((v) => ({ ...v, signatureImage: "" }));
+                    }}>×</button>
+                  </div>
+                ) : recordData.signature_image_url && !removedFiles.signatureImage ? (
+                  <div className="existing-file-row">
+                    <a href={recordData.signature_image_url} target="_blank" rel="noreferrer">{recordData.signature_image_filename || "Mevcut imzayı aç"}</a>
+                    <button type="button" className="file-remove-btn" title="İmzayı kaldır" aria-label="İmza görselini kaldır" onClick={() => setRemovedFiles((v) => ({ ...v, signatureImage: true }))}>×</button>
+                  </div>
+                ) : removedFiles.signatureImage ? <span className="file-remove-pending">İmza kaldırılacak.</span> : "İmza yüklenmedi"}
+              </div>
             </div>
-            <p className="admin-hint pdf-signature-note">Otomatik beyanda imza alanı boş bırakılır. İmzalanmış PDF'yi yükleyerek kullanabilirsiniz.</p>
+            <p className="admin-hint pdf-signature-note">Kaşe ve/veya imza görseli yüklüyse otomatik AB Uygunluk Beyanı'ndaki imza alanına yerleştirilir. En temiz sonuç için şeffaf arka planlı PNG kullanın.</p>
             <button className="admin-primary" type="submit" name="save_intent" value="generate_pdfs">Kaydet ve İki PDF'yi Oluştur</button>
           </div>
           <p className="admin-hint">PDF, DOC/DOCX ve görseller için dosya başına üst sınır 50 MB'dır.</p>

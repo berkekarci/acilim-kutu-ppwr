@@ -203,6 +203,8 @@ export async function saveRecordAction(fd) {
   const technicalRemove = s(fd, "technical_remove") === "1";
   const article5Remove = s(fd, "article5_remove") === "1";
   const productImageRemove = s(fd, "product_image_remove") === "1";
+  const stampImageRemove = s(fd, "stamp_image_remove") === "1";
+  const signatureImageRemove = s(fd, "signature_image_remove") === "1";
 
   const incomingDeclarationUrl = nullable(fd, "declaration_url_input");
   const declarationUrl = incomingDeclarationUrl || (declarationRemove ? null : current.declaration_url);
@@ -233,6 +235,18 @@ export async function saveRecordAction(fd) {
 
   const incomingProductImageUrl = nullable(fd, "product_image_url_input");
   const productImageUrl = incomingProductImageUrl || (productImageRemove ? null : current.product_image_url);
+
+  const incomingStampImageUrl = nullable(fd, "stamp_image_url_input");
+  const stampImageUrl = incomingStampImageUrl || (stampImageRemove ? null : current.stamp_image_url);
+  const stampImageFilename = incomingStampImageUrl
+    ? nullable(fd, "stamp_image_filename_input")
+    : (stampImageRemove ? null : current.stamp_image_filename);
+
+  const incomingSignatureImageUrl = nullable(fd, "signature_image_url_input");
+  const signatureImageUrl = incomingSignatureImageUrl || (signatureImageRemove ? null : current.signature_image_url);
+  const signatureImageFilename = incomingSignatureImageUrl
+    ? nullable(fd, "signature_image_filename_input")
+    : (signatureImageRemove ? null : current.signature_image_filename);
 
   // Her PPWR kaydı yalnızca tek güncel veri satırı taşır.
   await sql`DELETE FROM ppwr_audit_log WHERE record_id=${recordId} AND revision_id IS NOT NULL AND revision_id<>${dataId}`;
@@ -270,6 +284,10 @@ export async function saveRecordAction(fd) {
         document_issue_date=${s(fd, "document_issue_date") || current.document_issue_date || s(fd, "review_date")},
         signatory_name=${s(fd, "signatory_name")},
         signatory_title=${s(fd, "signatory_title")},
+        stamp_image_url=${stampImageUrl},
+        stamp_image_filename=${stampImageFilename},
+        signature_image_url=${signatureImageUrl},
+        signature_image_filename=${signatureImageFilename},
         declaration_title='',
         declaration_doc_no='',
         declaration_url=${declarationUrl},
@@ -306,6 +324,8 @@ export async function saveRecordAction(fd) {
     [current.technical_url, technicalUrl],
     [current.article5_url, article5Url],
     [current.product_image_url, productImageUrl],
+    [current.stamp_image_url, stampImageUrl],
+    [current.signature_image_url, signatureImageUrl],
   ].filter(([oldUrl, newUrl]) => oldUrl && oldUrl !== newUrl);
 
   await Promise.all(replacedOrRemoved.map(([oldUrl]) => deleteBlobQuietly(oldUrl)));
