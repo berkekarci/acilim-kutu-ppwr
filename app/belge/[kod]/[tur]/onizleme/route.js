@@ -10,11 +10,11 @@ export async function GET(request, { params }) {
     return new Response("Belge bulunamadı.", { status: 404 });
   }
   const record = await getPublicRecordByCode(kod);
-  if (!record?.article5_url) {
+  if (!record || (!record.article5_auto && !record.article5_url)) {
     return new Response("Belge bulunamadı.", { status: 404 });
   }
 
-  const extension = /\.doc$/i.test(record.article5_filename || "") ? "doc" : "docx";
+  const extension = record.article5_auto ? "docx" : (/\.doc$/i.test(record.article5_filename || "") ? "doc" : "docx");
   const origin = process.env.NEXT_PUBLIC_APP_URL || "https://ppwr.acilimkutu.com";
   const source = new URL(`/belge/${encodeURIComponent(record.public_code)}/art-5-uygunluk-beyani.${extension}`, origin);
   // Give Office a new source URL when a record's document has been updated.
