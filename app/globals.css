@@ -22,3 +22,5 @@
 .packaging-info-value{font-size:13px;line-height:1.4;color:var(--ink);font-weight:750;min-width:0}
 
 .statusgrid{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}.auto-status-grid{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+
+.pdf-automation{padding:18px;border:1px solid #bde6ed;background:#f2fbfd;border-radius:12px;margin-bottom:20px}.pdf-automation h3{margin:0 0 8px;font-size:16px}.pdf-automation .admin-hint{line-height:1.6}.pdf-automation .pdf-signature-note{margin:14px 0}.auto-pdf-file{display:grid;gap:6px;line-height:1.5}.auto-pdf-file strong{color:var(--brand2)}

@@ -2,6 +2,9 @@
 const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
+  outputFileTracingIncludes: {
+    "/belge/*": ["./assets/pdf/*.ttf"],
+  },
   async rewrites() {
     return [
       { source: "/admin", destination: "/yonetici" },

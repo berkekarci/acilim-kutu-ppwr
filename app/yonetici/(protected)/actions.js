@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { ensureSchema, getSql } from "@/lib/db";
 import { COMPANY } from "@/lib/company";
+import { TECHNICAL_PDF_TITLE } from "@/lib/document-settings";
 import { del } from "@vercel/blob";
 
 function s(fd, key) {
@@ -189,6 +190,15 @@ export async function saveRecordAction(fd) {
   const calculatedWeight = calculatePackageWeight(netArea, packageType);
   const materials = calculatePackageMaterials(netArea, packageType);
 
+  const technicalAuto = fd.has("technical_auto") ? s(fd, "technical_auto") === "1" : Boolean(current.technical_auto);
+  const declarationAuto = fd.has("declaration_auto") ? s(fd, "declaration_auto") === "1" : Boolean(current.declaration_auto);
+  if (technicalAuto || declarationAuto) {
+    const required = [["ppwr_id", "PPWR ID"], ["product_name", "Ürün / Ambalaj Adı"], ["dimensions", "Ölçüler"], ["review_date", "Son İnceleme Tarihi"]];
+    const missing = required.filter(([key]) => !s(fd, key)).map(([, label]) => label);
+    if (!parseAreaM2(netArea)) missing.push("Net Alan");
+    if (missing.length) return { error: `Otomatik PDF için şu alanları doldurun: ${missing.join(", ")}.` };
+  }
+
   const declarationRemove = s(fd, "declaration_remove") === "1";
   const technicalRemove = s(fd, "technical_remove") === "1";
   const article5Remove = s(fd, "article5_remove") === "1";
@@ -253,14 +263,19 @@ export async function saveRecordAction(fd) {
         components='[]'::jsonb,
         materials=CAST(${JSON.stringify(materials)} AS jsonb),
         identity_status='Otomatik',
-        technical_status=${technicalUrl ? "PDF eklendi" : "PDF yok"},
-        declaration_status=${declarationUrl ? "PDF eklendi" : "PDF yok"},
+        technical_status=${technicalAuto || technicalUrl ? "PDF eklendi" : "PDF yok"},
+        declaration_status=${declarationAuto || declarationUrl ? "PDF eklendi" : "PDF yok"},
+        technical_auto=${technicalAuto},
+        declaration_auto=${declarationAuto},
+        document_issue_date=${s(fd, "document_issue_date") || current.document_issue_date || s(fd, "review_date")},
+        signatory_name=${s(fd, "signatory_name")},
+        signatory_title=${s(fd, "signatory_title")},
         declaration_title='',
         declaration_doc_no='',
         declaration_url=${declarationUrl},
         declaration_download_url=${declarationDownloadUrl},
         declaration_filename=${declarationFilename},
-        technical_title=${s(fd, "technical_title")},
+        technical_title=${technicalAuto ? TECHNICAL_PDF_TITLE : s(fd, "technical_title")},
         technical_doc_no=${s(fd, "technical_doc_no")},
         technical_url=${technicalUrl},
         technical_download_url=${technicalDownloadUrl},

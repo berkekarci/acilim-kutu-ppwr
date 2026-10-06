@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { upload } from "@vercel/blob/client";
 import { COMPANY } from "@/lib/company";
+import { automaticPdfFilename, hasDeclarationPdf, hasTechnicalPdf } from "@/lib/document-settings";
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
@@ -169,6 +170,8 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
   const [netArea, setNetArea] = useState(recordData.net_area || "");
   const [dimensions, setDimensions] = useState(recordData.dimensions || "");
   const [submitting, setSubmitting] = useState(false);
+  const [technicalAuto, setTechnicalAuto] = useState(Boolean(recordData.technical_auto));
+  const [declarationAuto, setDeclarationAuto] = useState(Boolean(recordData.declaration_auto));
   const [removedFiles, setRemovedFiles] = useState({
     declaration: false,
     technical: false,
@@ -233,8 +236,15 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
   async function submitWithUploads(formData) {
     setSubmitting(true);
     setUploadError("");
+    const generateBoth = formData.get("save_intent") === "generate_pdfs";
+    if (generateBoth) { setTechnicalAuto(true); setDeclarationAuto(true); }
+    const useTechnicalAuto = generateBoth || technicalAuto;
+    const useDeclarationAuto = generateBoth || declarationAuto;
+    formData.set("technical_auto", useTechnicalAuto ? "1" : "0");
+    formData.set("declaration_auto", useDeclarationAuto ? "1" : "0");
     try {
-      await uploadFormFile(formData, {
+      if (useDeclarationAuto) formData.delete("declaration_file");
+      else await uploadFormFile(formData, {
         fileField: "declaration_file",
         urlField: "declaration_url_input",
         filenameField: "declaration_filename_input",
@@ -243,7 +253,8 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
         label: "AB Uygunluk Beyanı",
         type: "pdf",
       });
-      await uploadFormFile(formData, {
+      if (useTechnicalAuto) formData.delete("technical_file");
+      else await uploadFormFile(formData, {
         fileField: "technical_file",
         urlField: "technical_url_input",
         filenameField: "technical_filename_input",
@@ -282,7 +293,13 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
       );
       return;
     }
-    return action(formData);
+    const result = await action(formData);
+    if (result?.error) {
+      setSubmitting(false);
+      setUploadState("");
+      setUploadError(result.error);
+    }
+    return result;
   }
 
   return (
@@ -408,15 +425,43 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
 
         <section className="admin-panel">
           <h2>4. Belge ve görsel dosyaları</h2>
-          <p className="admin-hint">Dosyalar tarayıcıdan doğrudan Vercel Blob'a yüklenir. PDF, DOC/DOCX ve görseller için dosya başına üst sınır 50 MB'dır.</p>
+          <div className="pdf-automation">
+            <h3>Otomatik PDF oluşturma</h3>
+            <p className="admin-hint">Ürün tanımı, iş ve sistem kodları, teknik bilgiler, malzeme bileşimi, QR kod ve bağlantılar bu kayıttan alınır. Otomatik seçeneği açıkken kaydettiğiniz değişiklikler PDF'lere de yansır.</p>
+            <div className="form-grid">
+              <label>Ambalaj Kimlik ve Teknik Bilgi Belgesi
+                <select value={technicalAuto ? "auto" : "upload"} onChange={(e) => setTechnicalAuto(e.target.value === "auto")}>
+                  <option value="upload">Yüklediğim PDF'yi kullan</option>
+                  <option value="auto">Panel bilgilerinden otomatik oluştur</option>
+                </select>
+              </label>
+              <label>AB Uygunluk Beyanı
+                <select value={declarationAuto ? "auto" : "upload"} onChange={(e) => setDeclarationAuto(e.target.value === "auto")}>
+                  <option value="upload">Yüklediğim PDF'yi kullan</option>
+                  <option value="auto">Panel bilgilerinden otomatik oluştur</option>
+                </select>
+              </label>
+              <Input label="Beyan Düzenleme Tarihi" name="document_issue_date" defaultValue={recordData.document_issue_date || recordData.review_date} placeholder="GG.AA.YYYY" />
+              <Input label="Beyanı İmzalayacak Kişi" name="signatory_name" defaultValue={recordData.signatory_name} />
+              <Input label="İmzalayanın Görevi / Unvanı" name="signatory_title" defaultValue={recordData.signatory_title} />
+            </div>
+            <p className="admin-hint pdf-signature-note">Otomatik beyanda imza alanı boş bırakılır. İmzalanmış PDF'yi yükleyerek kullanabilirsiniz.</p>
+            <button className="admin-primary" type="submit" name="save_intent" value="generate_pdfs">Kaydet ve İki PDF'yi Oluştur</button>
+          </div>
+          <p className="admin-hint">PDF, DOC/DOCX ve görseller için dosya başına üst sınır 50 MB'dır.</p>
           <div className="form-grid">
-            <label>AB Uygunluk Beyanı PDF<input ref={declarationFileRef} type="file" name="declaration_file" accept="application/pdf" onChange={(e) => {
+            <label>AB Uygunluk Beyanı PDF<input disabled={declarationAuto} ref={declarationFileRef} type="file" name="declaration_file" accept="application/pdf" onChange={(e) => {
               const file = e.target.files?.[0];
               setSelectedFiles((v) => ({ ...v, declaration: file?.name || "" }));
               if (file) setRemovedFiles((v) => ({ ...v, declaration: false }));
             }} /></label>
             <div className="existing-file">
-              {selectedFiles.declaration ? (
+              {declarationAuto ? (
+                <div className="auto-pdf-file">
+                  <strong>Panel bilgilerinden otomatik oluşturulur</strong>
+                  {recordData.declaration_auto ? <a href={`/belge/${encodeURIComponent(publicCode)}/uygunluk-beyani`} target="_blank" rel="noopener noreferrer">{automaticPdfFilename(publicCode, "uygunluk-beyani")} · Görüntüle</a> : <span>Etkinleştirmek için kaydedin.</span>}
+                </div>
+              ) : selectedFiles.declaration ? (
                 <div className="existing-file-row selected-file-row">
                   <span>{selectedFiles.declaration}</span>
                   <button type="button" className="file-remove-btn" title="Seçilen dosyayı kaldır" aria-label="Seçilen uygunluk beyanı PDF'ini kaldır" onClick={() => {
@@ -434,13 +479,18 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
 
             <Input label="Teknik Dosya Başlığı" name="technical_title" defaultValue={recordData.technical_title} />
             <Input label="Teknik Dosya No" name="technical_doc_no" defaultValue={recordData.technical_doc_no} />
-            <label>Teknik Dosya PDF<input ref={technicalFileRef} type="file" name="technical_file" accept="application/pdf" onChange={(e) => {
+            <label>Teknik Dosya PDF<input disabled={technicalAuto} ref={technicalFileRef} type="file" name="technical_file" accept="application/pdf" onChange={(e) => {
               const file = e.target.files?.[0];
               setSelectedFiles((v) => ({ ...v, technical: file?.name || "" }));
               if (file) setRemovedFiles((v) => ({ ...v, technical: false }));
             }} /></label>
             <div className="existing-file">
-              {selectedFiles.technical ? (
+              {technicalAuto ? (
+                <div className="auto-pdf-file">
+                  <strong>Panel bilgilerinden otomatik oluşturulur</strong>
+                  {recordData.technical_auto ? <a href={`/belge/${encodeURIComponent(publicCode)}/teknik-dosya`} target="_blank" rel="noopener noreferrer">{automaticPdfFilename(publicCode, "teknik-dosya")} · Görüntüle</a> : <span>Etkinleştirmek için kaydedin.</span>}
+                </div>
+              ) : selectedFiles.technical ? (
                 <div className="existing-file-row selected-file-row">
                   <span>{selectedFiles.technical}</span>
                   <button type="button" className="file-remove-btn" title="Seçilen dosyayı kaldır" aria-label="Seçilen teknik PDF'i kaldır" onClick={() => {
@@ -507,8 +557,8 @@ export default function RecordEditor({ recordData, recordId, publicCode, action 
           <p className="admin-hint">Bu bölüm sistem tarafından otomatik takip edilir; ayrıca doldurmanız gerekmez.</p>
           <div className="auto-status-grid">
             <div className="auto-status"><span>Ambalaj kimliği</span><strong>{ppwrId && recordData.product_name ? "Hazır" : "Temel bilgiler bekleniyor"}</strong></div>
-            <div className="auto-status"><span>AB Uygunluk Beyanı</span><strong>{recordData.declaration_url ? "PDF eklendi" : "PDF yok"}</strong></div>
-            <div className="auto-status"><span>Teknik dosya</span><strong>{recordData.technical_url ? "PDF eklendi" : "PDF yok"}</strong></div>
+            <div className="auto-status"><span>AB Uygunluk Beyanı</span><strong>{hasDeclarationPdf(recordData) ? "PDF hazır" : "PDF yok"}</strong></div>
+            <div className="auto-status"><span>Teknik dosya</span><strong>{hasTechnicalPdf(recordData) ? "PDF hazır" : "PDF yok"}</strong></div>
             <div className="auto-status"><span>Art.5 PPWR Uygunluk Beyanı</span><strong>{recordData.article5_url ? "DOC/DOCX eklendi" : "Belge yok"}</strong></div>
           </div>
         </section>
