@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { COMPANY } from "@/lib/company";
-import { hasDeclarationPdf, hasTechnicalPdf, TECHNICAL_PDF_TITLE } from "@/lib/document-settings";
+import { hasArticle5Document, hasDeclarationPdf, hasTechnicalPdf, TECHNICAL_PDF_TITLE } from "@/lib/document-settings";
 
 function value(v, fallback = "—") { return v || fallback; }
 function array(v) { return Array.isArray(v) ? v : []; }
@@ -48,6 +48,7 @@ export default function PublicRecord({ record, qrDataUrl }) {
   const materials = array(record.materials);
   const declarationAvailable = hasDeclarationPdf(record);
   const technicalAvailable = hasTechnicalPdf(record);
+  const article5Available = hasArticle5Document(record);
   const [technicalTitleTr, ...technicalTitleEnParts] = value(record.technical_auto ? TECHNICAL_PDF_TITLE : record.technical_title, "Ambalaj Teknik Dosya Özeti / Packaging Technical File Summary").split(/\s+\/\s+/);
   const technicalTitleEn = technicalTitleEnParts.join(" / ") || "Packaging Technical File Summary";
   const pap = papMeta(record.usage_cycle);
@@ -95,7 +96,7 @@ export default function PublicRecord({ record, qrDataUrl }) {
           <div className="check"><b>Ambalaj Kimliği / Packaging Identity</b><div className="flag ok">● Yayında / Published</div></div>
           <div className="check"><b>Teknik Dosya / Technical File</b><div className={technicalAvailable ? "flag ok" : "flag"}>● {technicalAvailable ? "PDF eklendi / PDF Available" : "PDF yok / No PDF"}</div></div>
           <div className="check"><b>AB Uygunluk Beyanı / EU Declaration of Conformity</b><div className={declarationAvailable ? "flag ok" : "flag"}>● {declarationAvailable ? "PDF eklendi / PDF Available" : "PDF yok / No PDF"}</div></div>
-          <div className="check"><b>Art.5 PPWR Uygunluk Beyanı</b><div className={record.article5_url ? "flag ok" : "flag"}>● {record.article5_url ? "DOC/DOCX eklendi / Available" : "Belge yok / No document"}</div></div>
+          <div className="check"><b>Art.5 PPWR Uygunluk Beyanı</b><div className={article5Available ? "flag ok" : "flag"}>● {article5Available ? (record.article5_auto ? "Word otomatik / Auto Word" : "DOC/DOCX eklendi / Available") : "Belge yok / No document"}</div></div>
         </div></section>
 
         <section className="card full"><h2>Malzeme Bileşimi / Material Composition</h2><div className="table-scroll"><table className="materials"><thead><tr><th>Malzeme / Material</th><th>Ağırlık / Weight</th><th>Oran / Ratio</th></tr></thead><tbody>
@@ -106,8 +107,8 @@ export default function PublicRecord({ record, qrDataUrl }) {
         <section className="card full"><h2>Belgeler / Documents</h2>
           {declarationAvailable && <div className="doc"><div className="docicon">PDF</div><div><h3>AB Uygunluk Beyanı</h3><p>EU Declaration of Conformity</p></div><div className="actions"><a className="btn" href={`/belge/${encodeURIComponent(record.public_code)}/uygunluk-beyani`} target="_blank" rel="noreferrer">Görüntüle / View</a><a className="btn primary" href={`/belge/${encodeURIComponent(record.public_code)}/uygunluk-beyani?indir=1`}>PDF İndir / Download PDF</a></div></div>}
           {technicalAvailable && <div className="doc"><div className="docicon">PDF</div><div><h3>{technicalTitleTr}</h3><p>{technicalTitleEn}</p>{record.technical_doc_no && <p>{record.technical_doc_no}</p>}</div><div className="actions"><a className="btn" href={`/belge/${encodeURIComponent(record.public_code)}/teknik-dosya`} target="_blank" rel="noreferrer">Görüntüle / View</a><a className="btn primary" href={`/belge/${encodeURIComponent(record.public_code)}/teknik-dosya?indir=1`}>PDF İndir / Download PDF</a></div></div>}
-          {record.article5_url && <div className="doc"><div className="docicon">DOC</div><div><h3>Art.5 PPWR Uygunluk Beyanı</h3><p>Article 5 PPWR Declaration of Conformity</p></div><div className="actions"><a className="btn" href={`/belge/${encodeURIComponent(record.public_code)}/art-5-uygunluk-beyani/onizleme`} target="_blank" rel="noopener noreferrer">Görüntüle / View</a><a className="btn primary" href={`/belge/${encodeURIComponent(record.public_code)}/art-5-uygunluk-beyani?indir=1`}>DOC İndir / Download DOC</a></div></div>}
-          {!declarationAvailable && !technicalAvailable && !record.article5_url && <p className="muted">Yayınlanmış belge bulunmuyor. / No published documents available.</p>}
+          {article5Available && <div className="doc"><div className="docicon">DOCX</div><div><h3>Art.5 PPWR Uygunluk Beyanı</h3><p>Article 5 PPWR Declaration of Conformity</p></div><div className="actions"><a className="btn" href={`/belge/${encodeURIComponent(record.public_code)}/art-5-uygunluk-beyani/onizleme`} target="_blank" rel="noopener noreferrer">Görüntüle / View</a><a className="btn primary" href={`/belge/${encodeURIComponent(record.public_code)}/art-5-uygunluk-beyani?indir=1`}>{record.article5_auto ? "DOCX İndir / Download DOCX" : "DOC İndir / Download DOC"}</a></div></div>}
+          {!declarationAvailable && !technicalAvailable && !article5Available && <p className="muted">Yayınlanmış belge bulunmuyor. / No published documents available.</p>}
         </section>
 
         <section className="card full product-visual-card"><h2>Ürün Görseli / Product Visualization</h2>
