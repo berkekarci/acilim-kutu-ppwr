@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS ppwr_revisions (
   stamp_image_filename TEXT,
   signature_image_url TEXT,
   signature_image_filename TEXT,
+  article5_auto BOOLEAN NOT NULL DEFAULT FALSE,
   prepared_by TEXT,
   checked_by TEXT,
   approved_by TEXT,
